@@ -15,215 +15,44 @@ const CHAT_BGS = [
   { id:"slate", label:"Slate", bg:"linear-gradient(160deg,#0e1117,#1a2030)" },
 ];
 
-// ── SVG Icons ─────────────────────────────────────────────────────────────
-const IcBack = ({size=22,color="#A78BFA"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 12H5M12 5l-7 7 7 7"/>
-  </svg>
-);
-const IcAttach = ({size=22,color="#A78BFA"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66L9.41 17.41a2 2 0 01-2.83-2.83l8.49-8.48"/>
-  </svg>
-);
-const IcEmoji = ({size=22,color="#9CA3AF"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>
-  </svg>
-);
-const IcSend = ({size=20,color="#fff"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill={color} stroke={color}/>
-  </svg>
-);
-const IcReply = ({size=20,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/>
-  </svg>
-);
-const IcEdit = ({size=20,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-  </svg>
-);
-const IcCopy = ({size=20,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-  </svg>
-);
-const IcForward = ({size=20,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/>
-  </svg>
-);
-const IcPin = ({size=20,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V6h1a2 2 0 000-4H8a2 2 0 000 4h1v4.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V17z"/>
-  </svg>
-);
-const IcUnsend = ({size=20,color="#EF4444"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
-  </svg>
-);
-const IcReport = ({size=20,color="#EF4444"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
-  </svg>
-);
-const IcImage = ({size=20,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-  </svg>
-);
-const IcClose = ({size=18,color="#6B7280"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round">
-    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-);
-const IcCamera = ({size=16,color="#fff"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
-  </svg>
-);
-const IcSwipeReply = ({size=18,color="#A78BFA"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/>
-  </svg>
-);
-const IcMessage = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-  </svg>
-);
-const IcMute = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18.36 6.64A9 9 0 0121 12M6.34 6.34A9 9 0 003 12c0 4.97 4.03 9 9 9a9 9 0 006.66-2.96"/>
-    <path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V6a3 3 0 00-5.94-.6"/>
-    <line x1="1" y1="1" x2="23" y2="23"/>
-  </svg>
-);
-const IcUnmute = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8a6 6 0 010 8M6 8a6 6 0 000 8M12 2v2M12 20v2"/>
-    <circle cx="12" cy="12" r="3"/>
-  </svg>
-);
-const IcInfoSearch = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-  </svg>
-);
-const IcDotsHoriz = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
-    <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-  </svg>
-);
-const IcDownload = ({size=20,color="#fff"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-  </svg>
-);
-const IcBlock = ({size=22,color="#EF4444"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-  </svg>
-);
-const IcUserRemove = ({size=22,color="#F97316"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="11" x2="23" y2="11"/>
-  </svg>
-);
-const IcRestrict = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-  </svg>
-);
-const IcFlag = ({size=22,color="#EF4444"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
-  </svg>
-);
-const IcBell = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
-  </svg>
-);
-const IcBellOff = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M13.73 21a2 2 0 01-3.46 0M18.63 13A17.89 17.89 0 0118 8M6.26 6.26A5.86 5.86 0 006 8c0 7-3 9-3 9h14"/>
-    <path d="M18 8a6 6 0 00-9.33-5"/>
-    <line x1="1" y1="1" x2="23" y2="23"/>
-  </svg>
-);
-const IcPalette = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/>
-    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
-  </svg>
-);
-const IcPushPin = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="17" x2="12" y2="22"/>
-    <path d="M5 17h14v-1.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V6h1a2 2 0 000-4H8a2 2 0 000 4h1v4.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V17z"/>
-  </svg>
-);
-const IcMedia = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-    <polyline points="21 15 16 10 5 21"/>
-  </svg>
-);
-const IcNickname = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-    <circle cx="12" cy="7" r="4"/>
-    <line x1="17" y1="11" x2="22" y2="11"/><line x1="19.5" y1="8.5" x2="19.5" y2="13.5"/>
-  </svg>
-);
-const IcChevronRight = ({size=16,color="#4B5563"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="9 18 15 12 9 6"/>
-  </svg>
-);
-const IcChat = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-  </svg>
-);
-const IcFriends = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-    <circle cx="9" cy="7" r="4"/>
-    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
-  </svg>
-);
-const IcUser = ({size=22,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-  </svg>
-);
-const IcCheck = ({size=16,color="#A78BFA"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12"/>
-  </svg>
-);
-const IcDoubleCheck = ({size=16,color="#A78BFA"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="17 1 11 7 8 4"/><polyline points="23 7 11 13 7 9"/>
-  </svg>
-);
-const IcFile = ({size=24,color="#A78BFA"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-    <polyline points="14 2 14 8 20 8"/>
-  </svg>
-);
-const IcPlusCircle = ({size=22,color="#A78BFA"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
-  </svg>
-);
+const IcBack = ({size=22,color="#A78BFA"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>);
+const IcAttach = ({size=22,color="#A78BFA"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66L9.41 17.41a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>);
+const IcEmoji = ({size=22,color="#9CA3AF"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>);
+const IcSend = ({size=20,color="#fff"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill={color} stroke={color}/></svg>);
+const IcReply = ({size=20,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>);
+const IcEdit = ({size=20,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>);
+const IcCopy = ({size=20,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>);
+const IcForward = ({size=20,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg>);
+const IcUnsend = ({size=20,color="#EF4444"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>);
+const IcImage = ({size=20,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>);
+const IcClose = ({size=18,color="#6B7280"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>);
+const IcCamera = ({size=16,color="#fff"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>);
+const IcSwipeReply = ({size=18,color="#A78BFA"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>);
+const IcMessage = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>);
+const IcMute = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64A9 9 0 0121 12M6.34 6.34A9 9 0 003 12c0 4.97 4.03 9 9 9a9 9 0 006.66-2.96"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V6a3 3 0 00-5.94-.6"/><line x1="1" y1="1" x2="23" y2="23"/></svg>);
+const IcUnmute = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 010 8M6 8a6 6 0 000 8M12 2v2M12 20v2"/><circle cx="12" cy="12" r="3"/></svg>);
+const IcInfoSearch = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>);
+const IcDotsHoriz = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>);
+const IcDownload = ({size=20,color="#fff"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>);
+const IcBlock = ({size=22,color="#EF4444"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>);
+const IcUserRemove = ({size=22,color="#F97316"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="11" x2="23" y2="11"/></svg>);
+const IcRestrict = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>);
+const IcFlag = ({size=22,color="#EF4444"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>);
+const IcBell = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>);
+const IcBellOff = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M13.73 21a2 2 0 01-3.46 0M18.63 13A17.89 17.89 0 0118 8M6.26 6.26A5.86 5.86 0 006 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 00-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/></svg>);
+const IcPalette = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>);
+const IcPushPin = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V6h1a2 2 0 000-4H8a2 2 0 000 4h1v4.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V17z"/></svg>);
+const IcMedia = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>);
+const IcNickname = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="17" y1="11" x2="22" y2="11"/><line x1="19.5" y1="8.5" x2="19.5" y2="13.5"/></svg>);
+const IcChevronRight = ({size=16,color="#4B5563"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>);
+const IcChat = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>);
+const IcFriends = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>);
+const IcUser = ({size=22,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>);
+const IcCheck = ({size=16,color="#A78BFA"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>);
+const IcDoubleCheck = ({size=16,color="#A78BFA"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 11 7 8 4"/><polyline points="23 7 11 13 7 9"/></svg>);
+const IcFile = ({size=24,color="#A78BFA"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>);
+const IcPlusCircle = ({size=22,color="#A78BFA"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>);
+const IcStar = ({size=20,color="#FBBF24",fill="none"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>);
 
 // ── Avatar ─────────────────────────────────────────────────────────────────
 const Avatar = ({ user, size=42, ring=false, showStatus=false, onClick }) => (
@@ -250,7 +79,7 @@ const getLastSeen = (user) => {
   const diff = Math.floor((Date.now() - new Date(user.last_seen).getTime()) / 1000);
   if (diff < 20)  return "Active now";
   if (diff < 60)  return `Active ${diff}s ago`;
-  if (diff < 3600) return `Active ${Math.floor(diff/60)} min ago`;
+  if (diff < 3600) return `Active ${Math.floor(diff/60)}m ago`;
   if (diff < 86400) return `Active ${Math.floor(diff/3600)}h ago`;
   return `Active ${Math.floor(diff/86400)}d ago`;
 };
@@ -265,6 +94,7 @@ export default function App() {
   const [activeChat, setActiveChat] = useState(null);
   const [chatView, setChatView] = useState("messages");
   const [messages, setMessages] = useState([]);
+  const [msgsLoaded, setMsgsLoaded] = useState(false);
   const [pinnedMsgs, setPinnedMsgs] = useState([]);
   const [lastMsgs, setLastMsgs] = useState({});
   const [input, setInput] = useState("");
@@ -297,6 +127,10 @@ export default function App() {
   const [editNickname, setEditNickname] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [, setTick] = useState(0);
+  // NEW: avatar tap overlay + pinned chats
+  const [avatarOverlay, setAvatarOverlay] = useState(null);
+  const [pinnedChats, setPinnedChats] = useState([]);
+  const chatRowLongPress = useRef(null);
 
   const fileRef = useRef();
   const profilePhotoRef = useRef();
@@ -307,6 +141,8 @@ export default function App() {
   const heartbeatRef = useRef(null);
   const longPressTimer = useRef(null);
   const swipeStartX = useRef(0);
+  // track unsent message ids to suppress realtime re-insertion
+  const unsentIds = useRef(new Set());
 
   const currentBg = CHAT_BGS.find(b=>b.id===chatBg)?.bg || "#0D0D12";
   const notify = (msg, color="#A78BFA") => { setToast({msg,color}); setTimeout(()=>setToast(null),2800); };
@@ -420,25 +256,39 @@ export default function App() {
     load(); const id=setInterval(load,5000); return ()=>clearInterval(id);
   }, [me,friends]);
 
+  // ── FIX: loadMessages ignores unsent ids ──────────────────────────────────
   const loadMessages = useCallback(async () => {
     if (!me||!activeChat) return;
     const {data} = await supabase.from("messages").select("*")
       .or(`and(from_id.eq.${me.id},to_id.eq.${activeChat.id}),and(from_id.eq.${activeChat.id},to_id.eq.${me.id})`)
       .order("created_at",{ascending:true});
-    setMessages(data||[]);
-    const unseen=(data||[]).filter(m=>m.to_id===me.id&&!m.seen);
+    // Filter out any ids that are in the unsent set (deleted but not yet propagated)
+    const filtered = (data||[]).filter(m => !unsentIds.current.has(m.id));
+    setMessages(filtered);
+    setMsgsLoaded(true);
+    const unseen = filtered.filter(m=>m.to_id===me.id&&!m.seen);
     if (unseen.length) await supabase.from("messages").update({seen:true}).in("id",unseen.map(m=>m.id));
   }, [me,activeChat]);
 
   useEffect(() => {
     if (!me||!activeChat) return;
+    setMsgsLoaded(false);
+    setMessages([]);
+    unsentIds.current.clear();
     loadMessages();
     realtimeMsgRef.current?.unsubscribe();
     realtimeMsgRef.current = supabase.channel(`msgs:${[me.id,activeChat.id].sort().join("_")}`)
-      .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`to_id=eq.${me.id}`},()=>loadMessages())
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},(p)=>{
+        // Ignore if this message was locally unsent
+        if (p.new?.id && unsentIds.current.has(p.new.id)) return;
+        loadMessages();
+      })
       .on("postgres_changes",{event:"UPDATE",schema:"public",table:"messages"},()=>loadMessages())
       .on("postgres_changes",{event:"DELETE",schema:"public",table:"messages"},(p)=>{
-        if (p.old?.id) setMessages(prev=>prev.filter(m=>m.id!==p.old.id));
+        if (p.old?.id) {
+          unsentIds.current.add(p.old.id);
+          setMessages(prev=>prev.filter(m=>m.id!==p.old.id));
+        }
       })
       .subscribe();
     realtimeTypingRef.current?.unsubscribe();
@@ -481,11 +331,14 @@ export default function App() {
     reader.readAsDataURL(file); e.target.value="";
   };
 
-  // ── FIXED unsend: remove from state first, then DB, no re-fetch on success ──
+  // ── FIX: unsend — mark id as unsent FIRST, remove from UI, then delete from DB
+  // This prevents the realtime INSERT or re-fetch from bringing it back
   const unsendMessage = async (msgId) => {
-    setMessages(p=>p.filter(m=>m.id!==msgId));
+    unsentIds.current.add(msgId);                            // guard against re-fetch
+    setMessages(p=>p.filter(m=>m.id!==msgId));              // remove from UI instantly
     setMsgMenu(null);
-    await supabase.from("messages").delete().eq("id",msgId).eq("from_id",me.id);
+    await supabase.from("messages").delete().eq("id",msgId); // no from_id filter — delete for both sides
+    notify("Message unsent.");
   };
 
   const saveEditedMsg = async () => {
@@ -511,10 +364,7 @@ export default function App() {
     notify(alreadyPinned?"Unpinned.":"Message pinned");
   };
 
-  const forwardMessage = (msg) => {
-    setMsgMenu(null);
-    setInput(msg.type==="text"?msg.text:"");
-  };
+  const forwardMessage = (msg) => { setMsgMenu(null); setInput(msg.type==="text"?msg.text:""); };
 
   const sendFriendReq = async (user) => {
     const {error} = await supabase.from("friend_requests").insert({from_id:me.id,to_id:user.id});
@@ -544,13 +394,13 @@ export default function App() {
     await supabase.from("profiles").update({name:updated.name,bio:updated.bio,color:updated.color}).eq("id",me.id);
     setMe(updated); setEditingProfile(false); setProfileDraft({});
   };
-  const blockUser = (user) => { setBlockedUsers(p=>[...p,user.id]); setFullProfileUser(null); setActiveChat(null); setMessages([]); notify(`${user.name} blocked.`,"#EF4444"); };
+  const blockUser = (user) => { setBlockedUsers(p=>[...p,user.id]); setFullProfileUser(null); setAvatarOverlay(null); setActiveChat(null); setMessages([]); notify(`${user.name} blocked.`,"#EF4444"); };
   const restrictUser = (user) => { setRestrictedUsers(p=>p.includes(user.id)?p.filter(id=>id!==user.id):[...p,user.id]); notify(restrictedUsers.includes(user.id)?`${user.name} unrestricted.`:`${user.name} restricted.`); };
   const muteUser = (user) => { setMutedUsers(p=>p.includes(user.id)?p.filter(id=>id!==user.id):[...p,user.id]); notify(mutedUsers.includes(user.id)?`${user.name} unmuted.`:`${user.name} muted.`); };
   const removeFriend = async (user) => {
     const [a,b]=[me.id,user.id].sort();
     await supabase.from("friendships").delete().or(`and(user_a.eq.${a},user_b.eq.${b})`);
-    setFriends(p=>p.filter(f=>f.id!==user.id)); setFullProfileUser(null); setActiveChat(null); setMessages([]); notify(`Removed ${user.name}.`);
+    setFriends(p=>p.filter(f=>f.id!==user.id)); setFullProfileUser(null); setAvatarOverlay(null); setActiveChat(null); setMessages([]); notify(`Removed ${user.name}.`);
   };
   const isOnline = (user) => user?.online && Date.now()-new Date(user.last_seen).getTime()<20000;
 
@@ -558,9 +408,16 @@ export default function App() {
   const handleTouchMove = (e) => { const dx=e.touches[0].clientX-swipeStartX.current; if(dx>0&&dx<80) setSwipeX(dx); };
   const handleTouchEnd = (msg) => { if (swipeX>50) setReplyTo(msg); setSwipeX(0); setSwipeReply(null); };
 
+  // ── Toggle pin favourite chat ──────────────────────────────────────────
+  const togglePinChat = (userId) => {
+    setPinnedChats(p => p.includes(userId) ? p.filter(id=>id!==userId) : [...p, userId]);
+    notify(pinnedChats.includes(userId) ? "Chat unpinned." : "Chat pinned ⭐");
+  };
+
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap');
     *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;overflow:hidden}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2A2A38;border-radius:10px}
     input,textarea{outline:none;border:none;background:none;font-family:inherit;color:inherit}
     button{cursor:pointer;border:none;font-family:inherit}
@@ -578,22 +435,26 @@ export default function App() {
 
   const filteredMessages = chatSearchQ ? messages.filter(m=>m.type==="text"&&m.text.toLowerCase().includes(chatSearchQ.toLowerCase())) : messages;
 
-  // ── InfoRow helper ────────────────────────────────────────────────────────
+  // Sort friends: pinned first
+  const sortedFriends = [...friends].sort((a,b) => {
+    const ap = pinnedChats.includes(a.id) ? 0 : 1;
+    const bp = pinnedChats.includes(b.id) ? 0 : 1;
+    return ap - bp;
+  });
+
   const InfoRow = ({IconComp, label, sub, action, red=false, last=false}) => (
     <button onClick={action} style={{ width:"100%",padding:"14px 18px",background:"none",color:red?"#EF4444":"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:last?"none":"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:14,cursor:"pointer",border:"none" }}>
       <div style={{ width:28,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
         <IconComp size={20} color={red?"#EF4444":"#A78BFA"} />
       </div>
-      <div style={{ flex:1 }}>
-        <div>{label}</div>
-        {sub&&<div style={{ fontSize:12,color:"#4B5563",fontWeight:400,marginTop:1 }}>{sub}</div>}
-      </div>
+      <div style={{ flex:1 }}><div>{label}</div>{sub&&<div style={{ fontSize:12,color:"#4B5563",fontWeight:400,marginTop:1 }}>{sub}</div>}</div>
       <IcChevronRight size={16} color="#4B5563" />
     </button>
   );
 
+  // ── APP SHELL: full-height flex column, nothing scrolls except message area
   return (
-    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#0D0D12", minHeight:"100vh", color:"#E2E8F0", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
+    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#0D0D12", height:"100vh", color:"#E2E8F0", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
       <style>{css}</style>
 
       <input type="file" ref={fileRef} onChange={sendFile} style={{display:"none"}} accept="image/*,application/*" />
@@ -607,12 +468,35 @@ export default function App() {
         <div onClick={()=>setLightbox(null)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.96)",zIndex:9998,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20 }}>
           <img src={lightbox} alt="" style={{ maxWidth:"100%",maxHeight:"80vh",borderRadius:12,objectFit:"contain" }} />
           <div style={{ display:"flex",gap:16,marginTop:24 }}>
-            <a href={lightbox} download="pulse-image.jpg" onClick={e=>e.stopPropagation()} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"12px 24px",borderRadius:24,fontSize:14,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:8 }}>
-              <IcDownload size={18} color="#fff" /> Download
-            </a>
-            <button onClick={()=>setLightbox(null)} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"12px 24px",borderRadius:24,fontSize:14,fontWeight:600,border:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:8 }}>
-              <IcClose size={16} color="#9CA3AF" /> Close
-            </button>
+            <a href={lightbox} download="pulse-image.jpg" onClick={e=>e.stopPropagation()} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"12px 24px",borderRadius:24,fontSize:14,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:8 }}><IcDownload size={18}/> Download</a>
+            <button onClick={()=>setLightbox(null)} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"12px 24px",borderRadius:24,fontSize:14,fontWeight:600,border:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:8 }}><IcClose size={16} color="#9CA3AF"/> Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* Avatar Overlay — tap avatar in chats list */}
+      {avatarOverlay && (
+        <div onClick={()=>setAvatarOverlay(null)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center" }}>
+          <div onClick={e=>e.stopPropagation()} style={{ background:"#141420",borderRadius:24,padding:24,width:300,border:"1px solid #2A2A38",animation:"popIn .2s ease" }}>
+            <div style={{ display:"flex",alignItems:"center",gap:14,marginBottom:20 }}>
+              <Avatar user={avatarOverlay} size={56} ring showStatus />
+              <div>
+                <div style={{ fontWeight:800,fontSize:16 }}>{avatarOverlay.name}</div>
+                <div style={{ fontSize:12,color:"#6B7280",marginTop:2 }}>@{avatarOverlay.username}</div>
+                <div style={{ fontSize:11,color:isOnline(avatarOverlay)?"#4ADE80":"#6B7280",marginTop:3 }}>{getLastSeen(avatarOverlay)}</div>
+              </div>
+            </div>
+            <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+              <button onClick={()=>{setAvatarOverlay(null);setFullProfileUser(avatarOverlay);}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"12px 16px",borderRadius:14,fontSize:14,fontWeight:700,textAlign:"left",display:"flex",alignItems:"center",gap:10 }}>
+                <IcUser size={18} color="#fff"/> View Profile
+              </button>
+              <button onClick={()=>{setAvatarOverlay(null);setActiveChat(avatarOverlay);setView("chats");setChatView("messages");}} style={{ background:"#1E1E2A",color:"#E2E8F0",padding:"12px 16px",borderRadius:14,fontSize:14,fontWeight:600,textAlign:"left",display:"flex",alignItems:"center",gap:10,border:"1px solid #2A2A38" }}>
+                <IcMessage size={18} color="#A78BFA"/> Message
+              </button>
+              <button onClick={()=>{togglePinChat(avatarOverlay.id);setAvatarOverlay(null);}} style={{ background:"#1E1E2A",color:"#E2E8F0",padding:"12px 16px",borderRadius:14,fontSize:14,fontWeight:600,textAlign:"left",display:"flex",alignItems:"center",gap:10,border:"1px solid #2A2A38" }}>
+                <IcStar size={18} color="#FBBF24" fill={pinnedChats.includes(avatarOverlay.id)?"#FBBF24":"none"}/> {pinnedChats.includes(avatarOverlay.id)?"Unpin favourite":"Pin as favourite"}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -689,7 +573,7 @@ export default function App() {
         </div>
       )}
 
-      {/* SPLASH */}
+      {/* ── AUTH SCREENS ── */}
       {screen==="splash" && (
         <div className="screen-enter" style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:32 }}>
           <div style={{ width:80,height:80,borderRadius:24,background:"linear-gradient(135deg,#A78BFA,#6366F1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:38,marginBottom:24,boxShadow:"0 0 60px #A78BFA55" }}>⚡</div>
@@ -699,8 +583,6 @@ export default function App() {
           <button className="ripple" onClick={()=>setScreen("login")} style={{ width:"100%",padding:15,borderRadius:18,background:"#1A1A26",color:"#A78BFA",fontWeight:700,fontSize:16,border:"1px solid #2A2A38" }}>Sign In</button>
         </div>
       )}
-
-      {/* SIGNUP */}
       {screen==="signup" && (
         <div className="screen-enter" style={{ flex:1,padding:"48px 28px 32px",display:"flex",flexDirection:"column",minHeight:"100vh",overflowY:"auto" }}>
           <button onClick={()=>setScreen("splash")} style={{ background:"none",border:"none",padding:6,marginBottom:18,alignSelf:"flex-start" }}><IcBack size={24} color="#6B7280"/></button>
@@ -723,8 +605,6 @@ export default function App() {
           <div style={{ textAlign:"center",marginTop:20,color:"#4B5563",fontSize:13 }}>Already have an account?{" "}<span onClick={()=>{setScreen("login");setAuthErr("");}} style={{ color:"#A78BFA",fontWeight:700,cursor:"pointer" }}>Sign In</span></div>
         </div>
       )}
-
-      {/* LOGIN */}
       {screen==="login" && (
         <div className="screen-enter" style={{ flex:1,padding:"48px 28px 32px",display:"flex",flexDirection:"column",minHeight:"100vh" }}>
           <button onClick={()=>setScreen("splash")} style={{ background:"none",border:"none",padding:6,marginBottom:18,alignSelf:"flex-start" }}><IcBack size={24} color="#6B7280"/></button>
@@ -742,13 +622,13 @@ export default function App() {
         </div>
       )}
 
-      {/* HOME */}
+      {/* ── HOME ── */}
       {screen==="home" && me && (
         <>
-          {/* Top Bar */}
-          <div style={{ padding:"14px 20px",borderBottom:"1px solid #1A1A26",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#0D0D12",position:"sticky",top:0,zIndex:20,flexShrink:0 }}>
+          {/* STICKY Top Bar */}
+          <div style={{ padding:"14px 20px",borderBottom:"1px solid #1A1A26",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#0D0D12",flexShrink:0,zIndex:20 }}>
             {activeChat && view==="chats" ? (
-              <button onClick={()=>{setActiveChat(null);setMessages([]);setShowEmoji(false);setPeerTyping(false);setChatView("messages");setChatSearchOpen(false);setChatSearchQ("");}} style={{ background:"none",border:"none",padding:6,display:"flex",alignItems:"center" }}><IcBack size={24} color="#A78BFA"/></button>
+              <button onClick={()=>{setActiveChat(null);setMessages([]);setMsgsLoaded(false);setShowEmoji(false);setPeerTyping(false);setChatView("messages");setChatSearchOpen(false);setChatSearchQ("");}} style={{ background:"none",border:"none",padding:6,display:"flex",alignItems:"center" }}><IcBack size={24} color="#A78BFA"/></button>
             ) : (
               <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:22,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>pulse</div>
             )}
@@ -757,9 +637,7 @@ export default function App() {
                 <Avatar user={{...activeChat,online:isOnline(activeChat)}} size={36} showStatus ring />
                 <div>
                   <div style={{ fontWeight:700,fontSize:14 }}>{nickname||activeChat.name}</div>
-                  <div style={{ fontSize:11,color:isOnline(activeChat)?"#4ADE80":"#6B7280" }}>
-                    {isOnline(activeChat) ? "Active now" : getLastSeen(activeChat)}
-                  </div>
+                  <div style={{ fontSize:11,color:isOnline(activeChat)?"#4ADE80":"#6B7280" }}>{isOnline(activeChat)?"Active now":getLastSeen(activeChat)}</div>
                 </div>
               </div>
             ) : (
@@ -770,6 +648,7 @@ export default function App() {
             )}
           </div>
 
+          {/* Chat search bar */}
           {activeChat && chatSearchOpen && (
             <div style={{ padding:"8px 16px",borderBottom:"1px solid #1A1A26",background:"#0D0D12",flexShrink:0,display:"flex",gap:8,alignItems:"center" }}>
               <input value={chatSearchQ} onChange={e=>setChatSearchQ(e.target.value)} placeholder="Search messages..." style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"9px 16px",fontSize:14,border:"1px solid #2A2A38" }} autoFocus />
@@ -777,22 +656,31 @@ export default function App() {
             </div>
           )}
 
-          {/* Chat messages — fixed layout */}
+          {/* ── CHAT MESSAGES VIEW — fills remaining space, input stays at bottom ── */}
           {view==="chats" && activeChat && chatView==="messages" ? (
             <div style={{ flex:1,display:"flex",flexDirection:"column",minHeight:0,background:currentBg }} onClick={()=>setMsgMenu(null)}>
+              {/* Pinned banner */}
               {pinnedMsgs.length>0 && (
                 <div style={{ padding:"8px 16px",background:"#141420",borderBottom:"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:8,flexShrink:0 }}>
                   <IcPushPin size={14} color="#A78BFA"/>
                   <span style={{ fontSize:13,color:"#C4C4D4",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1 }}>{pinnedMsgs[pinnedMsgs.length-1]?.text}</span>
                 </div>
               )}
+
+              {/* Scrollable messages */}
               <div style={{ flex:1,overflowY:"auto",padding:"12px 12px 8px",display:"flex",flexDirection:"column",gap:2 }}>
-                {filteredMessages.length===0&&!chatSearchQ && (
+                {/* FIX: show spinner until loaded, then show empty state only if truly no messages */}
+                {!msgsLoaded && (
+                  <div style={{ textAlign:"center",color:"#4B5563",marginTop:60 }}>
+                    <div style={{ width:24,height:24,border:"2px solid #A78BFA",borderTopColor:"transparent",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto" }} />
+                  </div>
+                )}
+                {msgsLoaded && filteredMessages.length===0 && !chatSearchQ && (
                   <div style={{ textAlign:"center",color:"#4B5563",marginTop:60,fontSize:14 }}>
                     <div style={{ fontSize:44,marginBottom:12 }}>👋</div>Say hello to {activeChat.name}!
                   </div>
                 )}
-                {chatSearchQ&&filteredMessages.length===0 && (
+                {msgsLoaded && chatSearchQ && filteredMessages.length===0 && (
                   <div style={{ textAlign:"center",color:"#4B5563",marginTop:40,fontSize:14 }}>No messages found.</div>
                 )}
                 {filteredMessages.map((msg,i)=>{
@@ -812,35 +700,16 @@ export default function App() {
                       onTouchStart={e=>handleTouchStart(e,msg)} onTouchMove={handleTouchMove} onTouchEnd={()=>handleTouchEnd(msg)}>
                       {!isMe && <div style={{ width:32,flexShrink:0 }}>{isLastInGroup&&<Avatar user={activeChat} size={30} />}</div>}
                       <div style={{ maxWidth:"78%",display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start" }}>
-                        {msg.reply_to_id && (
-                          <div style={{ fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:3,textAlign:isMe?"right":"left" }}>
-                            {isMe?"You replied":"Replied to you"}
-                          </div>
-                        )}
-                        {msg.reply_to_id && (
-                          <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:14,padding:"7px 12px",marginBottom:3,fontSize:13,color:"#9CA3AF",maxWidth:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",border:"1px solid rgba(255,255,255,0.08)" }}>
-                            {msg.reply_text}
-                          </div>
-                        )}
+                        {msg.reply_to_id && <div style={{ fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:3,textAlign:isMe?"right":"left" }}>{isMe?"You replied":"Replied to you"}</div>}
+                        {msg.reply_to_id && <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:14,padding:"7px 12px",marginBottom:3,fontSize:13,color:"#9CA3AF",maxWidth:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",border:"1px solid rgba(255,255,255,0.08)" }}>{msg.reply_text}</div>}
                         <div className="msg-bubble"
                           onContextMenu={e=>{e.preventDefault();setMsgMenu({msg});}}
                           onTouchStart={e=>{swipeStartX.current=e.touches[0].clientX;longPressTimer.current=setTimeout(()=>setMsgMenu({msg}),500);}}
                           onTouchMove={e=>{clearTimeout(longPressTimer.current);handleTouchMove(e);}}
                           onTouchEnd={()=>{clearTimeout(longPressTimer.current);handleTouchEnd(msg);}}
-                          style={{
-                            background:isMe?"linear-gradient(135deg,#9333EA,#7C3AED)":"#1C1C28",
-                            color:"#fff",
-                            borderRadius:isMe?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px"):(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),
-                            padding:msg.type==="image"?4:"11px 15px",
-                            fontSize:15,lineHeight:1.55,cursor:"pointer",wordBreak:"break-word",
-                          }}>
+                          style={{ background:isMe?"linear-gradient(135deg,#9333EA,#7C3AED)":"#1C1C28",color:"#fff",borderRadius:isMe?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px"):(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),padding:msg.type==="image"?4:"11px 15px",fontSize:15,lineHeight:1.55,cursor:"pointer",wordBreak:"break-word" }}>
                           {msg.type==="image"&&<img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)} style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block",cursor:"pointer" }} />}
-                          {msg.type==="file"&&(
-                            <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-                              <IcFile size={24} color="#A78BFA"/>
-                              <div><div style={{ fontWeight:600,fontSize:13 }}>{msg.text}</div><div style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</div></div>
-                            </div>
-                          )}
+                          {msg.type==="file"&&(<div style={{ display:"flex",alignItems:"center",gap:10 }}><IcFile size={24} color="#A78BFA"/><div><div style={{ fontWeight:600,fontSize:13 }}>{msg.text}</div><div style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</div></div></div>)}
                           {msg.type==="text"&&(isEditing?(
                             <div onClick={e=>e.stopPropagation()}>
                               <input value={editingMsg.text} onChange={e=>setEditingMsg(p=>({...p,text:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")saveEditedMsg();if(e.key==="Escape")setEditingMsg(null);}} autoFocus style={{ background:"rgba(255,255,255,0.15)",border:"none",borderRadius:8,padding:"4px 8px",color:"#fff",fontSize:14,width:"100%",outline:"none" }} />
@@ -851,24 +720,8 @@ export default function App() {
                             </div>
                           ):msg.text)}
                         </div>
-                        {msgReactions.length>0&&(
-                          <div style={{ display:"flex",gap:3,marginTop:4,flexWrap:"wrap" }}>
-                            {Object.entries(msgReactions.reduce((a,r)=>{a[r.emoji]=(a[r.emoji]||0)+1;return a;},{})).map(([emoji,count])=>(
-                              <span key={emoji} onClick={()=>toggleReaction(msg,emoji)} style={{ background:"#1E1E2A",border:"1px solid #2A2A38",borderRadius:20,padding:"2px 8px",fontSize:12,cursor:"pointer" }}>{emoji} {count}</span>
-                            ))}
-                          </div>
-                        )}
-                        {isLastInGroup&&(
-                          <div style={{ fontSize:10,color:"#4B5563",marginTop:3,display:"flex",alignItems:"center",gap:4 }}>
-                            {time}
-                            {msg.edited&&<span style={{ color:"#6B7280" }}>· edited</span>}
-                            {isMe&&isLast&&(
-                              msg.seen
-                                ? <IcDoubleCheck size={14} color="#A78BFA"/>
-                                : <IcCheck size={14} color="#4B5563"/>
-                            )}
-                          </div>
-                        )}
+                        {msgReactions.length>0&&(<div style={{ display:"flex",gap:3,marginTop:4,flexWrap:"wrap" }}>{Object.entries(msgReactions.reduce((a,r)=>{a[r.emoji]=(a[r.emoji]||0)+1;return a;},{})).map(([emoji,count])=>(<span key={emoji} onClick={()=>toggleReaction(msg,emoji)} style={{ background:"#1E1E2A",border:"1px solid #2A2A38",borderRadius:20,padding:"2px 8px",fontSize:12,cursor:"pointer" }}>{emoji} {count}</span>))}</div>)}
+                        {isLastInGroup&&(<div style={{ fontSize:10,color:"#4B5563",marginTop:3,display:"flex",alignItems:"center",gap:4 }}>{time}{msg.edited&&<span style={{ color:"#6B7280" }}>· edited</span>}{isMe&&isLast&&(msg.seen?<IcDoubleCheck size={14} color="#A78BFA"/>:<IcCheck size={14} color="#4B5563"/>)}</div>)}
                       </div>
                       {isSwiping&&swipeX>20&&<div style={{ opacity:swipeX/60 }}><IcSwipeReply size={20}/></div>}
                     </div>
@@ -902,11 +755,7 @@ export default function App() {
                 </div>
               )}
 
-              {showEmoji&&(
-                <div style={{ background:"#141420",borderTop:"1px solid #1E1E2A",padding:"12px 16px",display:"flex",flexWrap:"wrap",gap:10,flexShrink:0 }}>
-                  {EMOJIS.map(e=><span key={e} onClick={()=>setInput(p=>p+e)} style={{ fontSize:22,cursor:"pointer" }}>{e}</span>)}
-                </div>
-              )}
+              {showEmoji&&(<div style={{ background:"#141420",borderTop:"1px solid #1E1E2A",padding:"12px 16px",display:"flex",flexWrap:"wrap",gap:10,flexShrink:0 }}>{EMOJIS.map(e=><span key={e} onClick={()=>setInput(p=>p+e)} style={{ fontSize:22,cursor:"pointer" }}>{e}</span>)}</div>)}
 
               {replyTo&&(
                 <div style={{ padding:"8px 16px",background:"#141420",borderTop:"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:10,flexShrink:0 }}>
@@ -918,6 +767,7 @@ export default function App() {
                 </div>
               )}
 
+              {/* Input bar — always at bottom */}
               <div style={{ padding:"10px 12px",borderTop:"1px solid #1A1A26",display:"flex",gap:6,alignItems:"center",background:"#0D0D12",flexShrink:0 }}>
                 <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcAttach size={20}/></button>
                 <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcEmoji size={20} color={showEmoji?"#A78BFA":"#9CA3AF"}/></button>
@@ -927,7 +777,8 @@ export default function App() {
             </div>
 
           ) : (
-            <div style={{ flex:1,overflowY:"auto",paddingBottom:view==="chats"&&activeChat?0:72 }}>
+            /* ── ALL OTHER VIEWS — scrollable ── */
+            <div style={{ flex:1,overflowY:"auto",paddingBottom:72 }}>
 
               {/* Chat Info */}
               {view==="chats" && activeChat && chatView==="info" && (
@@ -947,9 +798,7 @@ export default function App() {
                       {IconComp:IcDotsHoriz,label:"More",action:()=>setFullProfileUser(activeChat)},
                     ].map(a=>(
                       <button key={a.label} onClick={a.action} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:6,background:"none",color:"#E2E8F0",cursor:"pointer",border:"none" }}>
-                        <div style={{ width:48,height:48,borderRadius:"50%",background:"#1A1A26",display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid #2A2A38" }}>
-                          <a.IconComp size={20} color="#A78BFA"/>
-                        </div>
+                        <div style={{ width:48,height:48,borderRadius:"50%",background:"#1A1A26",display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid #2A2A38" }}><a.IconComp size={20} color="#A78BFA"/></div>
                         <span style={{ fontSize:11,color:"#6B7280",fontWeight:600 }}>{a.label}</span>
                       </button>
                     ))}
@@ -967,22 +816,14 @@ export default function App() {
                     <div style={{ margin:"0 16px 20px" }}>
                       <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:10 }}>Media</div>
                       <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:3,borderRadius:12,overflow:"hidden" }}>
-                        {messages.filter(m=>m.type==="image").slice(-9).map(m=>(
-                          <img key={m.id} src={m.data_url} alt="" onClick={()=>setLightbox(m.data_url)} style={{ width:"100%",aspectRatio:"1",objectFit:"cover",cursor:"pointer" }} />
-                        ))}
+                        {messages.filter(m=>m.type==="image").slice(-9).map(m=>(<img key={m.id} src={m.data_url} alt="" onClick={()=>setLightbox(m.data_url)} style={{ width:"100%",aspectRatio:"1",objectFit:"cover",cursor:"pointer" }} />))}
                       </div>
                     </div>
                   )}
                   {pinnedMsgs.length>0 && (
                     <div style={{ margin:"0 16px 20px" }}>
                       <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:10 }}>Pinned Messages</div>
-                      {pinnedMsgs.map(m=>(
-                        <div key={m.id} style={{ background:"#141420",borderRadius:12,padding:"12px 14px",marginBottom:8,border:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}>
-                          <IcPushPin size={16} color="#A78BFA"/>
-                          <div style={{ flex:1,fontSize:13,color:"#C4C4D4",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{m.text}</div>
-                          <button onClick={()=>pinMessage(m)} style={{ background:"none",border:"none",padding:2 }}><IcClose size={14} color="#4B5563"/></button>
-                        </div>
-                      ))}
+                      {pinnedMsgs.map(m=>(<div key={m.id} style={{ background:"#141420",borderRadius:12,padding:"12px 14px",marginBottom:8,border:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}><IcPushPin size={16} color="#A78BFA"/><div style={{ flex:1,fontSize:13,color:"#C4C4D4",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{m.text}</div><button onClick={()=>pinMessage(m)} style={{ background:"none",border:"none",padding:2 }}><IcClose size={14} color="#4B5563"/></button></div>))}
                     </div>
                   )}
                 </div>
@@ -993,16 +834,28 @@ export default function App() {
                 <div style={{ padding:"16px 20px 6px" }}>
                   <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:14 }}>Messages</div>
                   {friends.length===0 && <div style={{ textAlign:"center",color:"#4B5563",padding:"40px 0",fontSize:14 }}><div style={{ fontSize:42,marginBottom:12 }}>💬</div>Add friends to start chatting!</div>}
-                  {friends.map(user=>{
+                  {sortedFriends.map(user=>{
                     const lm=lastMsgs[user.id]; const online=isOnline(user); const unread=lm&&!lm.seen&&lm.from_id!==me.id;
                     const time=lm?new Date(lm.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"";
+                    const isPinned=pinnedChats.includes(user.id);
                     if (blockedUsers.includes(user.id)) return null;
                     return (
-                      <div key={user.id} className="chat-row" onClick={()=>{setActiveChat(user);setChatView("messages");}} style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:12 }}>
-                        <Avatar user={{...user,online}} size={50} showStatus />
+                      <div key={user.id} className="chat-row"
+                        onClick={()=>{setActiveChat(user);setChatView("messages");}}
+                        onTouchStart={()=>{ chatRowLongPress.current=setTimeout(()=>togglePinChat(user.id),600); }}
+                        onTouchEnd={()=>clearTimeout(chatRowLongPress.current)}
+                        onTouchMove={()=>clearTimeout(chatRowLongPress.current)}
+                        style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:12,position:"relative" }}>
+                        {/* Avatar tap → overlay */}
+                        <div onClick={e=>{e.stopPropagation();setAvatarOverlay(user);}} style={{ flexShrink:0,cursor:"pointer" }}>
+                          <Avatar user={{...user,online}} size={50} showStatus />
+                        </div>
                         <div style={{ flex:1,minWidth:0 }}>
                           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                            <div style={{ fontWeight:unread?800:600,fontSize:14 }}>{user.name}</div>
+                            <div style={{ fontWeight:unread?800:600,fontSize:14,display:"flex",alignItems:"center",gap:5 }}>
+                              {isPinned && <IcStar size={12} color="#FBBF24" fill="#FBBF24"/>}
+                              {user.name}
+                            </div>
                             <div style={{ fontSize:11,color:"#4B5563" }}>{time}</div>
                           </div>
                           <div style={{ fontSize:13,color:unread?"#A78BFA":"#6B7280",marginTop:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontWeight:unread?600:400 }}>
@@ -1059,8 +912,11 @@ export default function App() {
                     {friends.map(user=>{
                       const online=isOnline(user);
                       return (
-                        <div key={user.id} className="chat-row" style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:10 }} onClick={()=>{setActiveChat(user);setView("chats");setChatView("messages");}}>
-                          <Avatar user={{...user,online}} size={46} showStatus />
+                        <div key={user.id} className="chat-row" style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:10 }}
+                          onClick={()=>{setActiveChat(user);setView("chats");setChatView("messages");}}>
+                          <div onClick={e=>{e.stopPropagation();setAvatarOverlay(user);}} style={{ flexShrink:0 }}>
+                            <Avatar user={{...user,online}} size={46} showStatus />
+                          </div>
                           <div style={{ flex:1 }}>
                             <div style={{ fontWeight:600,fontSize:14 }}>{user.name}</div>
                             <div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div>
@@ -1130,8 +986,8 @@ export default function App() {
           )}
 
           {/* Bottom Nav */}
-          {!(view==="chats"&&activeChat) && (
-            <div style={{ position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0D0D12",borderTop:"1px solid #1A1A26",display:"flex",justifyContent:"space-around",padding:"10px 0 16px",zIndex:10 }}>
+          {!(view==="chats"&&activeChat&&chatView==="messages") && (
+            <div style={{ flexShrink:0,background:"#0D0D12",borderTop:"1px solid #1A1A26",display:"flex",justifyContent:"space-around",padding:"10px 0 16px",zIndex:10 }}>
               {[
                 {id:"chats",IconComp:IcChat,label:"Chats"},
                 {id:"friends",IconComp:IcFriends,label:"Friends",badge:requests.length},

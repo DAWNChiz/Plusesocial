@@ -15,11 +15,16 @@ const CHAT_BGS = [
   { id:"slate", label:"Slate", bg:"linear-gradient(160deg,#0e1117,#1a2030)" },
 ];
 
+// ── Avatar: supports photo_url ─────────────────────────────────────────────
 const Avatar = ({ user, size=42, ring=false, showStatus=false, onClick }) => (
   <div style={{ position:"relative", flexShrink:0, cursor:onClick?"pointer":"default" }} onClick={onClick}>
-    <div style={{ width:size, height:size, borderRadius:"50%", background:`linear-gradient(135deg,${user.color}cc,${user.color})`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'DM Mono',monospace", fontWeight:700, fontSize:Math.max(10,size*0.31), color:"#fff", boxShadow:ring?`0 0 0 2px #0D0D12,0 0 0 3.5px ${user.color}`:"none", userSelect:"none" }}>
-      {(user.name||"?").slice(0,2).toUpperCase()}
-    </div>
+    {user.photo_url ? (
+      <img src={user.photo_url} alt={user.name} style={{ width:size, height:size, borderRadius:"50%", objectFit:"cover", boxShadow:ring?`0 0 0 2px #0D0D12,0 0 0 3.5px ${user.color}`:"none", display:"block" }} />
+    ) : (
+      <div style={{ width:size, height:size, borderRadius:"50%", background:`linear-gradient(135deg,${user.color}cc,${user.color})`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'DM Mono',monospace", fontWeight:700, fontSize:Math.max(10,size*0.31), color:"#fff", boxShadow:ring?`0 0 0 2px #0D0D12,0 0 0 3.5px ${user.color}`:"none", userSelect:"none" }}>
+        {(user.name||"?").slice(0,2).toUpperCase()}
+      </div>
+    )}
     {showStatus && <span style={{ position:"absolute", bottom:1, right:1, width:Math.max(8,size*0.24), height:Math.max(8,size*0.24), borderRadius:"50%", background:user.online?"#4ADE80":"#4B5563", border:"2px solid #0D0D12" }} />}
   </div>
 );
@@ -38,7 +43,7 @@ export default function App() {
   const [requests, setRequests] = useState([]);
   const [sentReqs, setSentReqs] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
-  const [chatView, setChatView] = useState("messages"); // messages | info
+  const [chatView, setChatView] = useState("messages");
   const [messages, setMessages] = useState([]);
   const [pinnedMsgs, setPinnedMsgs] = useState([]);
   const [lastMsgs, setLastMsgs] = useState({});
@@ -66,12 +71,14 @@ export default function App() {
   const [mutedUsers, setMutedUsers] = useState([]);
   const [chatBg, setChatBg] = useState("default");
   const [showBgPicker, setShowBgPicker] = useState(false);
-  const [swipeReply, setSwipeReply] = useState(null); // msg being swiped
+  const [swipeReply, setSwipeReply] = useState(null);
   const [swipeX, setSwipeX] = useState(0);
   const [nickname, setNickname] = useState("");
   const [editNickname, setEditNickname] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const fileRef = useRef();
+  const profilePhotoRef = useRef();
   const chatEndRef = useRef();
   const typingTimerRef = useRef();
   const realtimeMsgRef = useRef(null);
@@ -105,7 +112,7 @@ export default function App() {
     const email = `${username.toLowerCase().trim()}@pulsesocial.app`;
     const {data,error} = await supabase.auth.signUp({email,password});
     if (error) { setAuthErr(error.message); setLoading(false); return; }
-    const profile = { id:data.user.id, username:username.toLowerCase().trim(), name:name.trim(), bio:"Hey, I'm on Pulse! 👋", color, online:true, last_seen:new Date().toISOString() };
+    const profile = { id:data.user.id, username:username.toLowerCase().trim(), name:name.trim(), bio:"Hey, I'm on Pulse! 👋", color, online:true, last_seen:new Date().toISOString(), photo_url:null };
     const {error:pe} = await supabase.from("profiles").insert(profile);
     if (pe) { setAuthErr(pe.message); setLoading(false); return; }
     setMe(profile); setScreen("home"); setLoading(false);
@@ -143,6 +150,25 @@ export default function App() {
     },10000);
   };
 
+  // ── Profile photo upload ──────────────────────────────────────────────────
+  const handleProfilePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file||!me) return;
+    if (!file.type.startsWith("image/")) { notify("Please select an image.","#EF4444"); return; }
+    if (file.size > 5*1024*1024) { notify("Image must be under 5MB.","#EF4444"); return; }
+    setUploadingPhoto(true);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const photo_url = ev.target.result;
+      const {error} = await supabase.from("profiles").update({photo_url}).eq("id",me.id);
+      if (error) notify("Failed to upload photo.","#EF4444");
+      else { setMe(p=>({...p,photo_url})); notify("Profile photo updated! 📸"); }
+      setUploadingPhoto(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value="";
+  };
+
   // ── Social ────────────────────────────────────────────────────────────────
   const loadSocial = useCallback(async () => {
     if (!me) return;
@@ -160,7 +186,6 @@ export default function App() {
 
   useEffect(() => { if (!me) return; loadSocial(); const id=setInterval(loadSocial,12000); return ()=>clearInterval(id); }, [me,loadSocial]);
 
-  // last msgs
   useEffect(() => {
     if (!me||!friends.length) return;
     const load = async () => {
@@ -246,12 +271,10 @@ export default function App() {
     setEditingMsg(null); notify("Message edited.");
   };
 
-  // ── REACTIONS — stored in DB, synced realtime ─────────────────────────────
   const toggleReaction = async (msg, emoji) => {
-    const cur = Array.isArray(msg.reactions) ? msg.reactions : [];
+    const cur = Array.isArray(msg.reactions)?msg.reactions:[];
     const exists = cur.find(r=>r.userId===me.id&&r.emoji===emoji);
-    const updated = exists ? cur.filter(r=>!(r.userId===me.id&&r.emoji===emoji)) : [...cur, {emoji,userId:me.id,userName:me.name}];
-    // optimistic update
+    const updated = exists?cur.filter(r=>!(r.userId===me.id&&r.emoji===emoji)):[...cur,{emoji,userId:me.id,userName:me.name}];
     setMessages(p=>p.map(m=>m.id===msg.id?{...m,reactions:updated}:m));
     await supabase.from("messages").update({reactions:updated}).eq("id",msg.id);
     setMsgMenu(null);
@@ -306,21 +329,14 @@ export default function App() {
   };
   const isOnline = (user) => user?.online && Date.now()-new Date(user.last_seen).getTime()<20000;
 
-  // ── Swipe to reply ────────────────────────────────────────────────────────
-  const handleTouchStart = (e, msg) => {
-    swipeStartX.current = e.touches[0].clientX;
-    setSwipeReply(msg);
-  };
-  const handleTouchMove = (e) => {
-    const dx = e.touches[0].clientX - swipeStartX.current;
-    if (dx > 0 && dx < 80) setSwipeX(dx);
-  };
+  // ── Swipe to reply — NO toast ─────────────────────────────────────────────
+  const handleTouchStart = (e, msg) => { swipeStartX.current=e.touches[0].clientX; setSwipeReply(msg); };
+  const handleTouchMove = (e) => { const dx=e.touches[0].clientX-swipeStartX.current; if(dx>0&&dx<80) setSwipeX(dx); };
   const handleTouchEnd = (msg) => {
-    if (swipeX > 50) { setReplyTo(msg); notify("Replying..."); }
+    if (swipeX>50) setReplyTo(msg); // no notify toast
     setSwipeX(0); setSwipeReply(null);
   };
 
-  // ── CSS ───────────────────────────────────────────────────────────────────
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap');
     *{box-sizing:border-box;margin:0;padding:0}
@@ -337,12 +353,15 @@ export default function App() {
     input::placeholder{color:#4B5563}
   `;
 
-  // ── RENDER ────────────────────────────────────────────────────────────────
   const filteredMessages = chatSearchQ ? messages.filter(m=>m.type==="text"&&m.text.toLowerCase().includes(chatSearchQ.toLowerCase())) : messages;
 
   return (
     <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#0D0D12", minHeight:"100vh", color:"#E2E8F0", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
       <style>{css}</style>
+
+      {/* Hidden file inputs */}
+      <input type="file" ref={fileRef} onChange={sendFile} style={{display:"none"}} accept="image/*,application/*" />
+      <input type="file" ref={profilePhotoRef} onChange={handleProfilePhotoUpload} style={{display:"none"}} accept="image/*" />
 
       {/* Toast */}
       {toast && <div style={{ position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:toast.color,color:"#fff",padding:"10px 22px",borderRadius:28,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:`0 4px 24px ${toast.color}66`,animation:"popIn .2s ease",whiteSpace:"nowrap" }}>{toast.msg}</div>}
@@ -366,11 +385,7 @@ export default function App() {
             <div style={{ fontWeight:700,fontSize:15 }}>{fullProfileUser.name}</div>
           </div>
           <div style={{ height:140,background:`linear-gradient(135deg,${fullProfileUser.color}88,${fullProfileUser.color}22)`,position:"relative" }}>
-            <div style={{ position:"absolute",bottom:-44,left:24 }}>
-              <div style={{ width:88,height:88,borderRadius:"50%",background:`linear-gradient(135deg,${fullProfileUser.color}cc,${fullProfileUser.color})`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:30,color:"#fff",border:"4px solid #0D0D12" }}>
-                {(fullProfileUser.name||"?").slice(0,2).toUpperCase()}
-              </div>
-            </div>
+            <div style={{ position:"absolute",bottom:-44,left:24 }}><Avatar user={fullProfileUser} size={88} ring /></div>
           </div>
           <div style={{ padding:"56px 24px 32px" }}>
             <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16 }}>
@@ -389,7 +404,6 @@ export default function App() {
               <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:8 }}>About</div>
               <div style={{ color:"#C4C4D4",fontSize:14,lineHeight:1.6 }}>{fullProfileUser.bio||"No bio yet."}</div>
             </div>
-            {/* Nickname */}
             <div style={{ background:"#141420",borderRadius:16,padding:16,marginBottom:16,border:"1px solid #1E1E2A" }}>
               <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:8 }}>Nickname</div>
               {editNickname ? (
@@ -498,11 +512,12 @@ export default function App() {
           {/* Top Bar */}
           <div style={{ padding:"14px 20px",borderBottom:"1px solid #1A1A26",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#0D0D12",position:"sticky",top:0,zIndex:20 }}>
             {activeChat && view==="chats" ? (
-              <button onClick={()=>{setActiveChat(null);setMessages([]);setShowEmoji(false);setPeerTyping(false);setChatView("messages");setChatSearchOpen(false);}} style={{ background:"#1A1A26",color:"#A78BFA",padding:"7px 14px",borderRadius:20,fontSize:13,fontWeight:700 }}>← Back</button>
+              <button onClick={()=>{setActiveChat(null);setMessages([]);setShowEmoji(false);setPeerTyping(false);setChatView("messages");setChatSearchOpen(false);setChatSearchQ("");}} style={{ background:"#1A1A26",color:"#A78BFA",padding:"7px 14px",borderRadius:20,fontSize:13,fontWeight:700 }}>← Back</button>
             ) : (
               <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:22,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>pulse</div>
             )}
             {activeChat && view==="chats" ? (
+              // Tap to open info. 🔍 icon REMOVED from header.
               <div style={{ display:"flex",alignItems:"center",gap:10,cursor:"pointer",flex:1,marginLeft:12 }} onClick={()=>setChatView(v=>v==="messages"?"info":"messages")}>
                 <Avatar user={{...activeChat,online:isOnline(activeChat)}} size={36} showStatus ring />
                 <div>
@@ -516,12 +531,9 @@ export default function App() {
                 <Avatar user={me} size={32} />
               </div>
             )}
-            {activeChat && view==="chats" && (
-              <button onClick={()=>setChatSearchOpen(o=>!o)} style={{ background:"#1A1A26",borderRadius:"50%",width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#A78BFA",flexShrink:0 }}>🔍</button>
-            )}
           </div>
 
-          {/* Chat search bar */}
+          {/* Chat search bar — only from info panel */}
           {activeChat && chatSearchOpen && (
             <div style={{ padding:"8px 16px",borderBottom:"1px solid #1A1A26",background:"#0D0D12" }}>
               <input value={chatSearchQ} onChange={e=>setChatSearchQ(e.target.value)} placeholder="Search messages..." style={{ width:"100%",background:"#1A1A26",borderRadius:24,padding:"9px 16px",fontSize:14,border:"1px solid #2A2A38" }} autoFocus />
@@ -533,7 +545,6 @@ export default function App() {
             {/* ── CHAT INFO VIEW ── */}
             {view==="chats" && activeChat && chatView==="info" && (
               <div style={{ padding:0 }}>
-                {/* Banner */}
                 <div style={{ height:120,background:`linear-gradient(135deg,${activeChat.color}66,${activeChat.color}22)`,display:"flex",alignItems:"flex-end",padding:"0 20px 16px" }}>
                   <Avatar user={{...activeChat,online:isOnline(activeChat)}} size={72} showStatus ring />
                   <div style={{ marginLeft:16 }}>
@@ -541,7 +552,6 @@ export default function App() {
                     <div style={{ color:"#6B7280",fontSize:13 }}>@{activeChat.username}</div>
                   </div>
                 </div>
-                {/* Quick actions */}
                 <div style={{ display:"flex",justifyContent:"space-around",padding:"20px 16px",borderBottom:"1px solid #1A1A26" }}>
                   {[
                     {icon:"💬",label:"Message",action:()=>setChatView("messages")},
@@ -555,7 +565,6 @@ export default function App() {
                     </button>
                   ))}
                 </div>
-                {/* Options list */}
                 <div style={{ margin:"12px 16px",background:"#141420",borderRadius:16,overflow:"hidden",border:"1px solid #1E1E2A" }}>
                   {[
                     {icon:"🎨",label:"Chat theme",sub:CHAT_BGS.find(b=>b.id===chatBg)?.label||"Default",action:()=>setShowBgPicker(true)},
@@ -568,15 +577,11 @@ export default function App() {
                   ].map((opt,i,arr)=>(
                     <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"14px 18px",background:"none",color:opt.red?"#EF4444":"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #1E1E2A":"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",border:"none" }}>
                       <span style={{ fontSize:20,width:28 }}>{opt.icon}</span>
-                      <div style={{ flex:1 }}>
-                        <div>{opt.label}</div>
-                        {opt.sub&&<div style={{ fontSize:12,color:"#4B5563",fontWeight:400,marginTop:1 }}>{opt.sub}</div>}
-                      </div>
+                      <div style={{ flex:1 }}><div>{opt.label}</div>{opt.sub&&<div style={{ fontSize:12,color:"#4B5563",fontWeight:400,marginTop:1 }}>{opt.sub}</div>}</div>
                       <span style={{ color:"#4B5563",fontSize:14 }}>›</span>
                     </button>
                   ))}
                 </div>
-                {/* Media grid */}
                 {messages.filter(m=>m.type==="image").length > 0 && (
                   <div style={{ margin:"0 16px 20px" }}>
                     <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:10 }}>Media</div>
@@ -587,7 +592,6 @@ export default function App() {
                     </div>
                   </div>
                 )}
-                {/* Pinned */}
                 {pinnedMsgs.length > 0 && (
                   <div style={{ margin:"0 16px 20px" }}>
                     <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:10 }}>Pinned Messages</div>
@@ -635,40 +639,62 @@ export default function App() {
             {/* ── CHAT MESSAGES ── */}
             {view==="chats" && activeChat && chatView==="messages" && (
               <div style={{ display:"flex",flexDirection:"column",height:`calc(100vh - ${chatSearchOpen?118:62}px)`,background:currentBg }} onClick={()=>setMsgMenu(null)}>
-                {/* Pinned banner */}
                 {pinnedMsgs.length>0 && (
                   <div style={{ padding:"8px 16px",background:"#141420",borderBottom:"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:8 }}>
                     <span>📌</span>
                     <span style={{ fontSize:13,color:"#C4C4D4",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1 }}>{pinnedMsgs[pinnedMsgs.length-1]?.text}</span>
                   </div>
                 )}
-                <div style={{ flex:1,overflowY:"auto",padding:"12px 16px 8px",display:"flex",flexDirection:"column",gap:4 }}>
+                <div style={{ flex:1,overflowY:"auto",padding:"12px 12px 8px",display:"flex",flexDirection:"column",gap:2 }}>
                   {filteredMessages.length===0&&!chatSearchQ && <div style={{ textAlign:"center",color:"#4B5563",marginTop:60,fontSize:14 }}><div style={{ fontSize:44,marginBottom:12 }}>👋</div>Say hello to {activeChat.name}!</div>}
                   {chatSearchQ&&filteredMessages.length===0 && <div style={{ textAlign:"center",color:"#4B5563",marginTop:40,fontSize:14 }}>No messages found.</div>}
                   {filteredMessages.map((msg,i)=>{
-                    const isMe=msg.from_id===me.id; const isLast=i===filteredMessages.length-1;
+                    const isMe=msg.from_id===me.id;
+                    const isLast=i===filteredMessages.length-1;
                     const isEditing=editingMsg?.id===msg.id;
                     const time=new Date(msg.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
                     const msgReactions=Array.isArray(msg.reactions)?msg.reactions:[];
                     const isSwiping=swipeReply?.id===msg.id;
+                    const nextMsg=filteredMessages[i+1];
+                    const prevMsg=filteredMessages[i-1];
+                    const isLastInGroup=!nextMsg||nextMsg.from_id!==msg.from_id;
+                    const isFirstInGroup=!prevMsg||prevMsg.from_id!==msg.from_id;
                     return (
                       <div key={msg.id} className="msg-in"
-                        style={{ display:"flex",flexDirection:isMe?"row-reverse":"row",alignItems:"flex-end",gap:6,marginBottom:2,transform:isSwiping?`translateX(${swipeX}px)`:"none",transition:isSwiping?"none":"transform .2s ease" }}
+                        style={{ display:"flex",flexDirection:isMe?"row-reverse":"row",alignItems:"flex-end",gap:6,marginBottom:isLastInGroup?6:1,transform:isSwiping?`translateX(${swipeX}px)`:"none",transition:isSwiping?"none":"transform .2s ease" }}
                         onTouchStart={e=>handleTouchStart(e,msg)} onTouchMove={handleTouchMove} onTouchEnd={()=>handleTouchEnd(msg)}>
-                        {!isMe && <Avatar user={activeChat} size={26} />}
-                        <div style={{ maxWidth:"75%",display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start" }}>
-                          {/* Reply preview */}
+
+                        {/* Avatar — only last in group for received */}
+                        {!isMe && <div style={{ width:32,flexShrink:0 }}>{isLastInGroup&&<Avatar user={activeChat} size={30} />}</div>}
+
+                        <div style={{ maxWidth:"78%",display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start" }}>
+                          {/* "You replied / Replied to you" label */}
                           {msg.reply_to_id && (
-                            <div style={{ background:"rgba(167,139,250,0.15)",borderLeft:"3px solid #A78BFA",borderRadius:"8px 8px 0 0",padding:"5px 10px",marginBottom:-4,fontSize:12,color:"#A78BFA",maxWidth:"100%" }}>
-                              <span style={{ fontWeight:700 }}>{msg.reply_from}</span>: {msg.reply_text}
+                            <div style={{ fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:3,textAlign:isMe?"right":"left" }}>
+                              {isMe?"You replied":"Replied to you"}
                             </div>
                           )}
+                          {/* Reply quote pill */}
+                          {msg.reply_to_id && (
+                            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:14,padding:"7px 12px",marginBottom:3,fontSize:13,color:"#9CA3AF",maxWidth:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",border:"1px solid rgba(255,255,255,0.08)" }}>
+                              {msg.reply_text}
+                            </div>
+                          )}
+                          {/* Main bubble */}
                           <div
                             onContextMenu={e=>{e.preventDefault();setMsgMenu({msg});}}
                             onTouchStart={e=>{swipeStartX.current=e.touches[0].clientX;longPressTimer.current=setTimeout(()=>setMsgMenu({msg}),500);}}
                             onTouchMove={e=>{clearTimeout(longPressTimer.current);handleTouchMove(e);}}
                             onTouchEnd={()=>{clearTimeout(longPressTimer.current);handleTouchEnd(msg);}}
-                            style={{ background:isMe?"linear-gradient(135deg,#A78BFA,#6366F1)":"#1E1E2A",color:"#fff",borderRadius:isMe?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:msg.type==="image"?4:"10px 14px",fontSize:14,lineHeight:1.55,cursor:"pointer" }}>
+                            style={{
+                              background:isMe?"linear-gradient(135deg,#9333EA,#7C3AED)":"#1C1C28",
+                              color:"#fff",
+                              borderRadius:isMe
+                                ?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px")
+                                :(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),
+                              padding:msg.type==="image"?4:"11px 15px",
+                              fontSize:15,lineHeight:1.55,cursor:"pointer",wordBreak:"break-word",
+                            }}>
                             {msg.type==="image"&&<img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)} style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block",cursor:"pointer" }} />}
                             {msg.type==="file"&&(
                               <div style={{ display:"flex",alignItems:"center",gap:10 }}>
@@ -694,13 +720,16 @@ export default function App() {
                               ))}
                             </div>
                           )}
-                          <div style={{ fontSize:10,color:"#4B5563",marginTop:3,display:"flex",alignItems:"center",gap:4 }}>
-                            {time}
-                            {msg.edited&&<span style={{ color:"#6B7280" }}>· edited</span>}
-                            {isMe&&isLast&&<span style={{ color:msg.seen?"#A78BFA":"#4B5563",fontWeight:700 }}>{msg.seen?" ✓✓":" ✓"}</span>}
-                          </div>
+                          {/* Time + seen — last in group only */}
+                          {isLastInGroup&&(
+                            <div style={{ fontSize:10,color:"#4B5563",marginTop:3,display:"flex",alignItems:"center",gap:4 }}>
+                              {time}
+                              {msg.edited&&<span style={{ color:"#6B7280" }}>· edited</span>}
+                              {isMe&&isLast&&<span style={{ color:msg.seen?"#A78BFA":"#4B5563",fontWeight:700 }}>{msg.seen?" ✓✓":" ✓"}</span>}
+                            </div>
+                          )}
                         </div>
-                        {isSwiping&&swipeX>20&&<span style={{ fontSize:20,opacity:swipeX/60 }}>↩️</span>}
+                        {isSwiping&&swipeX>20&&<span style={{ fontSize:18,opacity:swipeX/60 }}>↩️</span>}
                       </div>
                     );
                   })}
@@ -712,7 +741,6 @@ export default function App() {
                 {msgMenu&&(
                   <div onClick={()=>setMsgMenu(null)} style={{ position:"fixed",inset:0,zIndex:100 }}>
                     <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:90,left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:250,boxShadow:"0 8px 40px #00000088",border:"1px solid #2A2A38",zIndex:101 }}>
-                      {/* React row */}
                       <div style={{ display:"flex",justifyContent:"space-around",padding:"12px 16px",borderBottom:"1px solid #2A2A38" }}>
                         {REACT_EMOJIS.map(e=><span key={e} onClick={()=>toggleReaction(msgMenu.msg,e)} style={{ fontSize:24,cursor:"pointer" }}>{e}</span>)}
                       </div>
@@ -733,14 +761,12 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Emoji picker */}
                 {showEmoji&&(
                   <div style={{ background:"#141420",borderTop:"1px solid #1E1E2A",padding:"12px 16px",display:"flex",flexWrap:"wrap",gap:10 }}>
                     {EMOJIS.map(e=><span key={e} onClick={()=>setInput(p=>p+e)} style={{ fontSize:22,cursor:"pointer" }}>{e}</span>)}
                   </div>
                 )}
 
-                {/* Reply preview bar */}
                 {replyTo&&(
                   <div style={{ padding:"8px 16px",background:"#141420",borderTop:"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:10 }}>
                     <div style={{ flex:1,borderLeft:"3px solid #A78BFA",paddingLeft:10 }}>
@@ -751,9 +777,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Input bar */}
                 <div style={{ padding:"10px 12px",borderTop:"1px solid #1A1A26",display:"flex",gap:6,alignItems:"center",background:"#0D0D12" }}>
-                  <input type="file" ref={fileRef} onChange={sendFile} style={{ display:"none" }} accept="image/*,application/*" />
                   <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",color:"#A78BFA",fontSize:16,flexShrink:0 }}>📎</button>
                   <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0 }}>😊</button>
                   <input value={input} onChange={e=>{setInput(e.target.value);signalTyping();}} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage(input)} placeholder="Message..." style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"11px 16px",fontSize:14 }} />
@@ -819,7 +843,13 @@ export default function App() {
             {view==="profile" && (
               <div style={{ padding:"20px" }}>
                 <div style={{ background:`linear-gradient(135deg,${me.color}22,#141420)`,borderRadius:20,padding:24,marginBottom:20,border:`1px solid ${me.color}33`,textAlign:"center" }}>
-                  <Avatar user={me} size={80} ring />
+                  {/* Avatar with 📷 upload button */}
+                  <div style={{ position:"relative",display:"inline-block" }}>
+                    <Avatar user={me} size={88} ring />
+                    <button onClick={()=>profilePhotoRef.current.click()} disabled={uploadingPhoto} style={{ position:"absolute",bottom:0,right:0,width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#A78BFA,#6366F1)",border:"2px solid #0D0D12",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#fff",cursor:"pointer",boxShadow:"0 2px 8px #00000066" }}>
+                      {uploadingPhoto?"⏳":"📷"}
+                    </button>
+                  </div>
                   {editingProfile?(
                     <div style={{ marginTop:16 }}>
                       <input value={profileDraft.name??me.name} onChange={e=>setProfileDraft(p=>({...p,name:e.target.value}))} style={{ width:"100%",background:"#1A1A26",borderRadius:12,padding:"10px 14px",fontSize:16,fontWeight:700,textAlign:"center",marginBottom:8,border:"1px solid #2A2A38" }} />

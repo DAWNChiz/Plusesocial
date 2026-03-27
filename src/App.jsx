@@ -15,6 +15,101 @@ const CHAT_BGS = [
   { id:"slate", label:"Slate", bg:"linear-gradient(160deg,#0e1117,#1a2030)" },
 ];
 
+// ── SVG Icons ─────────────────────────────────────────────────────────────
+const Icon = ({ d, size=22, color="currentColor", fill="none", strokeWidth=1.8 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+    <path d={d} />
+  </svg>
+);
+// Individual icons
+const IcBack = ({size=22,color="#A78BFA"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 12H5M12 5l-7 7 7 7"/>
+  </svg>
+);
+const IcAttach = ({size=22,color="#A78BFA"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66L9.41 17.41a2 2 0 01-2.83-2.83l8.49-8.48"/>
+  </svg>
+);
+const IcEmoji = ({size=22,color="#9CA3AF"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M8 13s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>
+  </svg>
+);
+const IcSend = ({size=20,color="#fff"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <line x1="22" y1="2" x2="11" y2="13"/>
+    <polygon points="22 2 15 22 11 13 2 9 22 2" fill={color} stroke={color}/>
+  </svg>
+);
+const IcReply = ({size=20,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/>
+  </svg>
+);
+const IcEdit = ({size=20,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+);
+const IcCopy = ({size=20,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+  </svg>
+);
+const IcForward = ({size=20,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/>
+  </svg>
+);
+const IcPin = ({size=20,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V6h1a2 2 0 000-4H8a2 2 0 000 4h1v4.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V17z"/>
+  </svg>
+);
+const IcUnsend = ({size=20,color="#EF4444"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+  </svg>
+);
+const IcReport = ({size=20,color="#EF4444"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
+  </svg>
+);
+const IcImage = ({size=20,color="#EF4444"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+  </svg>
+);
+const IcSearch = ({size=18,color="#A78BFA"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+);
+const IcClose = ({size=18,color="#6B7280"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+const IcCamera = ({size=16,color="#fff"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
+  </svg>
+);
+const IcMore = ({size=20,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
+    <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+  </svg>
+);
+const IcSwipeReply = ({size=18,color="#A78BFA"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/>
+  </svg>
+);
+
 // ── Avatar: supports photo_url ─────────────────────────────────────────────
 const Avatar = ({ user, size=42, ring=false, showStatus=false, onClick }) => (
   <div style={{ position:"relative", flexShrink:0, cursor:onClick?"pointer":"default" }} onClick={onClick}>
@@ -217,7 +312,10 @@ export default function App() {
     realtimeMsgRef.current = supabase.channel(`msgs:${[me.id,activeChat.id].sort().join("_")}`)
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`to_id=eq.${me.id}`},()=>loadMessages())
       .on("postgres_changes",{event:"UPDATE",schema:"public",table:"messages"},()=>loadMessages())
-      .on("postgres_changes",{event:"DELETE",schema:"public",table:"messages"},()=>loadMessages())
+      .on("postgres_changes",{event:"DELETE",schema:"public",table:"messages"},(p)=>{
+        // Remove deleted message from state without re-fetching (prevents unsent msg from restoring)
+        if (p.old?.id) setMessages(prev=>prev.filter(m=>m.id!==p.old.id));
+      })
       .subscribe();
     realtimeTypingRef.current?.unsubscribe();
     realtimeTypingRef.current = supabase.channel(`typ:${activeChat.id}_${me.id}`)
@@ -260,8 +358,11 @@ export default function App() {
   };
 
   const unsendMessage = async (msgId) => {
-    await supabase.from("messages").delete().eq("id",msgId).eq("from_id",me.id);
-    setMessages(p=>p.filter(m=>m.id!==msgId)); setMsgMenu(null); notify("Message unsent.");
+    setMessages(p=>p.filter(m=>m.id!==msgId));
+    setMsgMenu(null);
+    const {error} = await supabase.from("messages").delete().eq("id",msgId).eq("from_id",me.id);
+    if (error) { notify("Could not unsend.","#EF4444"); loadMessages(); }
+    else notify("Message unsent.");
   };
 
   const saveEditedMsg = async () => {
@@ -348,6 +449,7 @@ export default function App() {
     @keyframes popIn{from{opacity:0;transform:scale(.85) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
     @keyframes slideIn{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
     .msg-in{animation:popIn .2s ease}.screen-enter{animation:fadeUp .3s ease}
     .tab-btn:hover{background:#1A1A26!important}.chat-row:hover{background:#151520!important}
     input::placeholder{color:#4B5563}
@@ -512,7 +614,7 @@ export default function App() {
           {/* Top Bar */}
           <div style={{ padding:"14px 20px",borderBottom:"1px solid #1A1A26",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#0D0D12",position:"sticky",top:0,zIndex:20 }}>
             {activeChat && view==="chats" ? (
-              <button onClick={()=>{setActiveChat(null);setMessages([]);setShowEmoji(false);setPeerTyping(false);setChatView("messages");setChatSearchOpen(false);setChatSearchQ("");}} style={{ background:"#1A1A26",color:"#A78BFA",padding:"7px 14px",borderRadius:20,fontSize:13,fontWeight:700 }}>← Back</button>
+              <button onClick={()=>{setActiveChat(null);setMessages([]);setShowEmoji(false);setPeerTyping(false);setChatView("messages");setChatSearchOpen(false);setChatSearchQ("");}} style={{ background:"none",border:"none",padding:"6px",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:10 }}><IcBack size={24} color="#A78BFA"/></button>
             ) : (
               <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:22,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>pulse</div>
             )}
@@ -599,7 +701,7 @@ export default function App() {
                       <div key={m.id} style={{ background:"#141420",borderRadius:12,padding:"12px 14px",marginBottom:8,border:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}>
                         <span style={{ fontSize:18 }}>📌</span>
                         <div style={{ flex:1,fontSize:13,color:"#C4C4D4",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{m.text}</div>
-                        <button onClick={()=>pinMessage(m)} style={{ background:"none",color:"#4B5563",fontSize:12,border:"none" }}>✕</button>
+                        <button onClick={()=>pinMessage(m)} style={{ background:"none",border:"none",display:"flex",alignItems:"center",justifyContent:"center",padding:2 }}><IcClose size={14} color="#4B5563"/></button>
                       </div>
                     ))}
                   </div>
@@ -729,7 +831,7 @@ export default function App() {
                             </div>
                           )}
                         </div>
-                        {isSwiping&&swipeX>20&&<span style={{ fontSize:18,opacity:swipeX/60 }}>↩️</span>}
+                        {isSwiping&&swipeX>20&&<div style={{ opacity:swipeX/60 }}><IcSwipeReply size={20}/></div>}
                       </div>
                     );
                   })}
@@ -745,16 +847,16 @@ export default function App() {
                         {REACT_EMOJIS.map(e=><span key={e} onClick={()=>toggleReaction(msgMenu.msg,e)} style={{ fontSize:24,cursor:"pointer" }}>{e}</span>)}
                       </div>
                       {[
-                        {label:"Reply",icon:"↩️",action:()=>{setReplyTo(msgMenu.msg);setMsgMenu(null);}},
-                        ...(msgMenu.msg.from_id===me.id&&msgMenu.msg.type==="text"?[{label:"Edit",icon:"✏️",action:()=>{setEditingMsg({id:msgMenu.msg.id,text:msgMenu.msg.text});setMsgMenu(null);}}]:[]),
-                        {label:"Copy",icon:"📋",action:()=>{navigator.clipboard?.writeText(msgMenu.msg.text||"");notify("Copied!");setMsgMenu(null);}},
-                        {label:"Forward",icon:"↪️",action:()=>forwardMessage(msgMenu.msg)},
-                        {label:pinnedMsgs.find(m=>m.id===msgMenu.msg.id)?"Unpin":"Pin",icon:"📌",action:()=>pinMessage(msgMenu.msg)},
-                        ...(msgMenu.msg.type==="image"?[{label:"View image",icon:"🔍",action:()=>{setLightbox(msgMenu.msg.data_url);setMsgMenu(null);}}]:[]),
-                        ...(msgMenu.msg.from_id===me.id?[{label:"Unsend",icon:"🗑️",action:()=>unsendMessage(msgMenu.msg.id),red:true}]:[{label:"Report",icon:"🚩",action:()=>{notify("Reported.","#F97316");setMsgMenu(null);},red:true}]),
+                        {label:"Reply",Icon:IcReply,action:()=>{setReplyTo(msgMenu.msg);setMsgMenu(null);}},
+                        ...(msgMenu.msg.from_id===me.id&&msgMenu.msg.type==="text"?[{label:"Edit",Icon:IcEdit,action:()=>{setEditingMsg({id:msgMenu.msg.id,text:msgMenu.msg.text});setMsgMenu(null);}}]:[]),
+                        {label:"Copy",Icon:IcCopy,action:()=>{navigator.clipboard?.writeText(msgMenu.msg.text||"");notify("Copied!");setMsgMenu(null);}},
+                        {label:"Forward",Icon:IcForward,action:()=>forwardMessage(msgMenu.msg)},
+                        {label:pinnedMsgs.find(m=>m.id===msgMenu.msg.id)?"Unpin":"Pin",Icon:IcPin,action:()=>pinMessage(msgMenu.msg)},
+                        ...(msgMenu.msg.type==="image"?[{label:"View photo",Icon:IcImage,color:"#E2E8F0",action:()=>{setLightbox(msgMenu.msg.data_url);setMsgMenu(null);}}]:[]),
+                        ...(msgMenu.msg.from_id===me.id?[{label:"Unsend",Icon:IcUnsend,color:"#EF4444",action:()=>unsendMessage(msgMenu.msg.id)}]:[{label:"Report",Icon:IcReport,color:"#EF4444",action:()=>{notify("Reported.","#F97316");setMsgMenu(null);}}]),
                       ].map((opt,i,arr)=>(
-                        <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"13px 20px",background:"none",color:opt.red?"#EF4444":"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #2A2A38":"none",display:"flex",alignItems:"center",gap:10,cursor:"pointer",border:"none" }}>
-                          <span style={{ fontSize:18 }}>{opt.icon}</span>{opt.label}
+                        <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"13px 20px",background:"none",color:opt.color||"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #2A2A38":"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",border:"none" }}>
+                          <opt.Icon size={20} color={opt.color||"#E2E8F0"}/>{opt.label}
                         </button>
                       ))}
                     </div>
@@ -773,15 +875,15 @@ export default function App() {
                       <div style={{ fontSize:12,color:"#A78BFA",fontWeight:700 }}>Replying to {replyTo.from_id===me.id?"yourself":activeChat.name}</div>
                       <div style={{ fontSize:13,color:"#9CA3AF",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{replyTo.type==="text"?replyTo.text:"📷 Photo"}</div>
                     </div>
-                    <button onClick={()=>setReplyTo(null)} style={{ background:"none",color:"#4B5563",fontSize:18,border:"none" }}>✕</button>
+                    <button onClick={()=>setReplyTo(null)} style={{ background:"none",border:"none",display:"flex",alignItems:"center",justifyContent:"center",padding:4 }}><IcClose size={18} color="#6B7280"/></button>
                   </div>
                 )}
 
                 <div style={{ padding:"10px 12px",borderTop:"1px solid #1A1A26",display:"flex",gap:6,alignItems:"center",background:"#0D0D12" }}>
-                  <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",color:"#A78BFA",fontSize:16,flexShrink:0 }}>📎</button>
-                  <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0 }}>😊</button>
+                  <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}><IcAttach size={20}/></button>
+                  <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}><IcEmoji size={20} color={showEmoji?"#A78BFA":"#9CA3AF"}/></button>
                   <input value={input} onChange={e=>{setInput(e.target.value);signalTyping();}} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage(input)} placeholder="Message..." style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"11px 16px",fontSize:14 }} />
-                  <button onClick={()=>sendMessage(input)} disabled={!input.trim()} className="ripple" style={{ background:input.trim()?"linear-gradient(135deg,#A78BFA,#6366F1)":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#fff",flexShrink:0 }}>↑</button>
+                  <button onClick={()=>sendMessage(input)} disabled={!input.trim()} className="ripple" style={{ background:input.trim()?"linear-gradient(135deg,#A78BFA,#6366F1)":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}><IcSend size={18}/></button>
                 </div>
               </div>
             )}
@@ -846,8 +948,8 @@ export default function App() {
                   {/* Avatar with 📷 upload button */}
                   <div style={{ position:"relative",display:"inline-block" }}>
                     <Avatar user={me} size={88} ring />
-                    <button onClick={()=>profilePhotoRef.current.click()} disabled={uploadingPhoto} style={{ position:"absolute",bottom:0,right:0,width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#A78BFA,#6366F1)",border:"2px solid #0D0D12",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#fff",cursor:"pointer",boxShadow:"0 2px 8px #00000066" }}>
-                      {uploadingPhoto?"⏳":"📷"}
+                    <button onClick={()=>profilePhotoRef.current.click()} disabled={uploadingPhoto} style={{ position:"absolute",bottom:0,right:0,width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#A78BFA,#6366F1)",border:"2px solid #0D0D12",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 2px 8px #00000066" }}>
+                      {uploadingPhoto ? <div style={{width:14,height:14,border:"2px solid #fff",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/> : <IcCamera size={14}/>}
                     </button>
                   </div>
                   {editingProfile?(

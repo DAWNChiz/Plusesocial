@@ -71,8 +71,24 @@ export default function App() {
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [restrictedUsers, setRestrictedUsers] = useState([]);
   const [reactions, setReactions] = useState({}); // msgId -> [{emoji, userId}]
-  const [showReactPicker, setShowReactPicker] = useState(null); // msgId
+  const [showReactPicker, setShowReactPicker] = useState(null);
+  const [mutedUsers, setMutedUsers] = useState([]);
+  const [chatBg, setChatBg] = useState("default");
+  const [showBgPicker, setShowBgPicker] = useState(false);
+  const [fullProfileUser, setFullProfileUser] = useState(null);
   const longPressTimer = useRef(null);
+
+  const CHAT_BACKGROUNDS = [
+    { id:"default", label:"Default", style:{ background:"#0D0D12" } },
+    { id:"midnight", label:"Midnight", style:{ background:"linear-gradient(160deg,#0D0D12 0%,#1a0533 100%)" } },
+    { id:"ocean", label:"Ocean", style:{ background:"linear-gradient(160deg,#0a1628 0%,#0d2847 100%)" } },
+    { id:"forest", label:"Forest", style:{ background:"linear-gradient(160deg,#0a1a0d 0%,#0d2e14 100%)" } },
+    { id:"sunset", label:"Sunset", style:{ background:"linear-gradient(160deg,#1a0a0a 0%,#2d1210 100%)" } },
+    { id:"rose", label:"Rose", style:{ background:"linear-gradient(160deg,#1a0d18 0%,#2d1429 100%)" } },
+    { id:"gold", label:"Gold", style:{ background:"linear-gradient(160deg,#1a1500 0%,#2d2200 100%)" } },
+    { id:"slate", label:"Slate", style:{ background:"linear-gradient(160deg,#0e1117 0%,#1a2030 100%)" } },
+  ];
+  const currentBgStyle = CHAT_BACKGROUNDS.find(b=>b.id===chatBg)?.style || {};
 
   const fileRef = useRef();
   const chatEndRef = useRef();
@@ -201,6 +217,10 @@ export default function App() {
       .or(`and(from_id.eq.${me.id},to_id.eq.${activeChat.id}),and(from_id.eq.${activeChat.id},to_id.eq.${me.id})`)
       .order("created_at", { ascending: true });
     setMessages(data || []);
+    // Load reactions from DB into state
+    const rxMap = {};
+    (data||[]).forEach(m => { if(m.reactions?.length) rxMap[m.id] = m.reactions; });
+    setReactions(prev => ({...prev, ...rxMap}));
     const unseen = (data || []).filter(m => m.to_id === me.id && !m.seen);
     if (unseen.length) await supabase.from("messages").update({ seen: true }).in("id", unseen.map(m => m.id));
   }, [me, activeChat]);
@@ -214,6 +234,7 @@ export default function App() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `to_id=eq.${me.id}` }, () => loadMessages())
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `to_id=eq.${me.id}` }, () => loadMessages())
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "messages", filter: `to_id=eq.${me.id}` }, () => loadMessages())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `from_id=eq.${me.id}` }, () => loadMessages())
       .subscribe();
     realtimeTypingRef.current?.unsubscribe();
     realtimeTypingRef.current = supabase
@@ -299,12 +320,22 @@ export default function App() {
   };
 
   const toggleReaction = async (msgId, emoji) => {
+    // Update local state immediately
     setReactions(p => {
       const cur = p[msgId] || [];
       const exists = cur.find(r => r.userId === me.id && r.emoji === emoji);
-      return { ...p, [msgId]: exists ? cur.filter(r => !(r.userId===me.id&&r.emoji===emoji)) : [...cur, {emoji, userId: me.id}] };
+      const updated = exists ? cur.filter(r => !(r.userId===me.id&&r.emoji===emoji)) : [...cur, {emoji, userId: me.id, userName: me.name}];
+      // Persist to DB
+      supabase.from("messages").update({ reactions: updated }).eq("id", msgId);
+      return { ...p, [msgId]: updated };
     });
     setShowReactPicker(null);
+  };
+
+  const muteUser = (user) => {
+    const isMuted = mutedUsers.includes(user.id);
+    setMutedUsers(p => isMuted ? p.filter(id=>id!==user.id) : [...p, user.id]);
+    notify(isMuted ? `${user.name} unmuted.` : `${user.name} muted.`);
   };
 
   const sendFriendReq = async (user) => {
@@ -370,6 +401,95 @@ export default function App() {
       {toast && (
         <div style={{ position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:toast.color,color:"#fff",padding:"10px 22px",borderRadius:28,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:`0 4px 24px ${toast.color}66`,animation:"popIn .2s ease",whiteSpace:"nowrap" }}>
           {toast.msg}
+        </div>
+      )}
+
+      {/* ── FULL PROFILE SCREEN ── */}
+      {fullProfileUser && (
+        <div style={{ position:"fixed",inset:0,background:"#0D0D12",zIndex:300,overflowY:"auto",animation:"fadeUp .25s ease" }}>
+          {/* Header */}
+          <div style={{ padding:"14px 20px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1A1A26",position:"sticky",top:0,background:"#0D0D12",zIndex:10 }}>
+            <button onClick={()=>setFullProfileUser(null)} style={{ background:"#1A1A26",color:"#A78BFA",padding:"7px 14px",borderRadius:20,fontSize:13,fontWeight:700,border:"none",cursor:"pointer" }}>← Back</button>
+            <div style={{ fontWeight:700,fontSize:15 }}>{fullProfileUser.name}</div>
+          </div>
+          {/* Cover banner */}
+          <div style={{ height:140,background:`linear-gradient(135deg, ${fullProfileUser.color}88, ${fullProfileUser.color}22)`,position:"relative" }}>
+            <div style={{ position:"absolute",bottom:-40,left:24 }}>
+              <div style={{ width:80,height:80,borderRadius:"50%",background:`linear-gradient(135deg, ${fullProfileUser.color}cc, ${fullProfileUser.color})`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Mono', monospace",fontWeight:700,fontSize:28,color:"#fff",border:"4px solid #0D0D12" }}>
+                {(fullProfileUser.name||"?").slice(0,2).toUpperCase()}
+              </div>
+            </div>
+          </div>
+          {/* Info */}
+          <div style={{ padding:"52px 24px 24px" }}>
+            <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16 }}>
+              <div>
+                <div style={{ fontWeight:800,fontSize:22,color:"#E2E8F0" }}>{fullProfileUser.name}</div>
+                <div style={{ color:"#6B7280",fontSize:14,marginTop:2 }}>@{fullProfileUser.username}</div>
+              </div>
+              <div style={{ display:"flex",gap:8 }}>
+                <button onClick={()=>{setFullProfileUser(null);setViewingProfile(null);setActiveChat(fullProfileUser);setView("chats");}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"10px 20px",borderRadius:24,fontSize:13,fontWeight:700,border:"none",cursor:"pointer" }}>
+                  💬 Message
+                </button>
+              </div>
+            </div>
+            {/* Status badge */}
+            <div style={{ display:"inline-flex",alignItems:"center",gap:6,background:isOnline(fullProfileUser)?"#0f2d1a":"#1a1a26",padding:"6px 14px",borderRadius:20,marginBottom:16,border:`1px solid ${isOnline(fullProfileUser)?"#4ADE8033":"#2A2A38"}` }}>
+              <span style={{ width:8,height:8,borderRadius:"50%",background:isOnline(fullProfileUser)?"#4ADE80":"#4B5563",display:"inline-block" }} />
+              <span style={{ fontSize:13,color:isOnline(fullProfileUser)?"#4ADE80":"#6B7280",fontWeight:600 }}>{isOnline(fullProfileUser)?"Active now":"Offline"}</span>
+            </div>
+            {/* Bio */}
+            <div style={{ background:"#141420",borderRadius:16,padding:16,marginBottom:16,border:"1px solid #1E1E2A" }}>
+              <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:8 }}>About</div>
+              <div style={{ color:"#C4C4D4",fontSize:14,lineHeight:1.6 }}>{fullProfileUser.bio || "No bio yet."}</div>
+            </div>
+            {/* Stats row */}
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16 }}>
+              {[
+                {label:"Friends",value:friends.filter(f=>f.id===fullProfileUser.id||fullProfileUser.id===f.id).length > 0 ? "✓":"−",icon:"👥"},
+                {label:"Status",value:isOnline(fullProfileUser)?"Online":"Away",icon:"🟢"},
+                {label:"Member",value:"Active",icon:"⚡"},
+              ].map(s=>(
+                <div key={s.label} style={{ background:"#141420",borderRadius:14,padding:"14px 10px",textAlign:"center",border:"1px solid #1E1E2A" }}>
+                  <div style={{ fontSize:22 }}>{s.icon}</div>
+                  <div style={{ fontWeight:700,fontSize:14,color:"#A78BFA",marginTop:4 }}>{s.value}</div>
+                  <div style={{ fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginTop:2 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+            {/* Actions */}
+            <div style={{ background:"#141420",borderRadius:16,overflow:"hidden",border:"1px solid #1E1E2A" }}>
+              {[
+                {label:mutedUsers.includes(fullProfileUser.id)?"Unmute notifications":"Mute notifications",icon:mutedUsers.includes(fullProfileUser.id)?"🔔":"🔕",action:()=>muteUser(fullProfileUser),color:"#E2E8F0"},
+                {label:restrictedUsers.includes(fullProfileUser.id)?"Remove restriction":"Restrict",icon:"🔇",action:()=>restrictUser(fullProfileUser),color:"#E2E8F0"},
+                {label:"Remove friend",icon:"👋",action:()=>removeFriend(fullProfileUser),color:"#F97316"},
+                {label:"Block",icon:"🚫",action:()=>blockUser(fullProfileUser),color:"#EF4444"},
+                {label:"Report",icon:"🚩",action:()=>{notify("Reported.",  "#F97316");setFullProfileUser(null);},color:"#EF4444"},
+              ].map((opt,i,arr)=>(
+                <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"15px 18px",background:"none",color:opt.color,fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #1E1E2A":"none",display:"flex",alignItems:"center",gap:12,cursor:"pointer",border:"none" }}>
+                  <span style={{ fontSize:18 }}>{opt.icon}</span>{opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CHAT BG PICKER ── */}
+      {showBgPicker && (
+        <div onClick={()=>setShowBgPicker(false)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:250,display:"flex",alignItems:"flex-end" }}>
+          <div onClick={e=>e.stopPropagation()} style={{ width:"100%",maxWidth:480,margin:"0 auto",background:"#0F0F1A",borderRadius:"24px 24px 0 0",padding:"20px 20px 40px",border:"1px solid #1E1E2A" }}>
+            <div style={{ width:40,height:4,background:"#2A2A38",borderRadius:4,margin:"0 auto 20px" }} />
+            <div style={{ fontWeight:700,fontSize:16,marginBottom:16,color:"#E2E8F0" }}>Chat Background</div>
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10 }}>
+              {CHAT_BACKGROUNDS.map(bg=>(
+                <div key={bg.id} onClick={()=>{setChatBg(bg.id);setShowBgPicker(false);}} style={{ borderRadius:14,overflow:"hidden",cursor:"pointer",border:chatBg===bg.id?"2px solid #A78BFA":"2px solid transparent",transition:"all .15s" }}>
+                  <div style={{ height:70,...bg.style }} />
+                  <div style={{ background:"#141420",padding:"6px 4px",textAlign:"center",fontSize:10,fontWeight:700,color:chatBg===bg.id?"#A78BFA":"#6B7280",textTransform:"uppercase",letterSpacing:.5 }}>{bg.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -523,7 +643,7 @@ export default function App() {
 
             {/* CHAT WINDOW */}
             {view==="chats" && activeChat && (
-              <div style={{ display:"flex",flexDirection:"column",height:"calc(100vh - 62px)" }} onClick={()=>setMsgMenu(null)}>
+              <div style={{ display:"flex",flexDirection:"column",height:"calc(100vh - 62px)",...currentBgStyle }} onClick={()=>setMsgMenu(null)}>
                 <div style={{ flex:1,overflowY:"auto",padding:"16px 20px 8px",display:"flex",flexDirection:"column",gap:8 }}>
                   {messages.length===0 && (
                     <div style={{ textAlign:"center",color:"#4B5563",marginTop:60,fontSize:14 }}>
@@ -652,6 +772,7 @@ export default function App() {
                   <input type="file" ref={fileRef} onChange={sendFile} style={{ display:"none" }} accept="image/*,application/*" />
                   <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",color:"#A78BFA",fontSize:17,flexShrink:0 }}>📎</button>
                   <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0 }}>😊</button>
+                  <button onClick={()=>setShowBgPicker(true)} style={{ background:"#1A1A26",borderRadius:"50%",width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0 }}>🎨</button>
                   <input value={input} onChange={e=>{setInput(e.target.value);signalTyping();}}
                     onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage(input)}
                     placeholder="Message..." style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"11px 16px",fontSize:14 }} />
@@ -818,8 +939,8 @@ export default function App() {
                 {/* Options list */}
                 <div style={{ margin:"12px 20px 0",background:"#141420",borderRadius:16,overflow:"hidden",border:"1px solid #1E1E2A" }}>
                   {[
-                    { label:"View full profile", icon:"👤", action:()=>{}, color:"#E2E8F0" },
-                    { label:"Mute notifications", icon:"🔕", action:()=>notify("Notifications muted."), color:"#E2E8F0" },
+                    { label:"View full profile", icon:"👤", action:()=>setFullProfileUser(viewingProfile), color:"#E2E8F0" },
+                    { label:mutedUsers.includes(viewingProfile.id)?"Unmute notifications":"Mute notifications", icon:mutedUsers.includes(viewingProfile.id)?"🔔":"🔕", action:()=>muteUser(viewingProfile), color:"#E2E8F0" },
                     { label:"Copy username", icon:"📋", action:()=>{navigator.clipboard?.writeText(`@${viewingProfile.username}`);notify("Username copied!");}, color:"#E2E8F0" },
                     { label:"Remove friend", icon:"👋", action:()=>removeFriend(viewingProfile), color:"#F97316" },
                     { label:"Block", icon:"🚫", action:()=>blockUser(viewingProfile), color:"#EF4444" },

@@ -67,6 +67,12 @@ export default function App() {
   const [msgMenu, setMsgMenu] = useState(null);
   const [editingMsg, setEditingMsg] = useState(null);
   const [lightbox, setLightbox] = useState(null);
+  const [viewingProfile, setViewingProfile] = useState(null); // user object for profile sheet
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [restrictedUsers, setRestrictedUsers] = useState([]);
+  const [reactions, setReactions] = useState({}); // msgId -> [{emoji, userId}]
+  const [showReactPicker, setShowReactPicker] = useState(null); // msgId
+  const longPressTimer = useRef(null);
 
   const fileRef = useRef();
   const chatEndRef = useRef();
@@ -206,6 +212,8 @@ export default function App() {
     realtimeMsgRef.current = supabase
       .channel(`chat:${[me.id, activeChat.id].sort().join("_")}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `to_id=eq.${me.id}` }, () => loadMessages())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `to_id=eq.${me.id}` }, () => loadMessages())
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "messages", filter: `to_id=eq.${me.id}` }, () => loadMessages())
       .subscribe();
     realtimeTypingRef.current?.unsubscribe();
     realtimeTypingRef.current = supabase
@@ -260,10 +268,43 @@ export default function App() {
 
   const saveEditedMsg = async () => {
     if (!editingMsg?.text?.trim()) return;
-    await supabase.from("messages").update({ text: editingMsg.text }).eq("id", editingMsg.id).eq("from_id", me.id);
-    setMessages(p => p.map(m => m.id === editingMsg.id ? { ...m, text: editingMsg.text } : m));
+    await supabase.from("messages").update({ text: editingMsg.text, edited: true }).eq("id", editingMsg.id).eq("from_id", me.id);
+    setMessages(p => p.map(m => m.id === editingMsg.id ? { ...m, text: editingMsg.text, edited: true } : m));
     setEditingMsg(null);
     notify("Message edited.");
+  };
+
+  const blockUser = async (user) => {
+    setBlockedUsers(p => [...p, user.id]);
+    setViewingProfile(null);
+    setActiveChat(null);
+    setMessages([]);
+    notify(`${user.name} blocked.`, "#EF4444");
+  };
+
+  const restrictUser = (user) => {
+    setRestrictedUsers(p => p.includes(user.id) ? p.filter(id=>id!==user.id) : [...p, user.id]);
+    const isRestricted = restrictedUsers.includes(user.id);
+    notify(isRestricted ? `${user.name} unrestricted.` : `${user.name} restricted.`);
+  };
+
+  const removeFriend = async (user) => {
+    const [a, b] = [me.id, user.id].sort();
+    await supabase.from("friendships").delete().or(`and(user_a.eq.${a},user_b.eq.${b})`);
+    setFriends(p => p.filter(f => f.id !== user.id));
+    setViewingProfile(null);
+    setActiveChat(null);
+    setMessages([]);
+    notify(`Removed ${user.name}.`);
+  };
+
+  const toggleReaction = async (msgId, emoji) => {
+    setReactions(p => {
+      const cur = p[msgId] || [];
+      const exists = cur.find(r => r.userId === me.id && r.emoji === emoji);
+      return { ...p, [msgId]: exists ? cur.filter(r => !(r.userId===me.id&&r.emoji===emoji)) : [...cur, {emoji, userId: me.id}] };
+    });
+    setShowReactPicker(null);
   };
 
   const sendFriendReq = async (user) => {
@@ -430,7 +471,7 @@ export default function App() {
               <div style={{ fontFamily:"'DM Mono', monospace",fontWeight:700,fontSize:22,letterSpacing:"-1px",background:"linear-gradient(135deg, #A78BFA, #6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>pulse</div>
             )}
             {activeChat && view==="chats" ? (
-              <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+              <div style={{ display:"flex",alignItems:"center",gap:10,cursor:"pointer" }} onClick={()=>setViewingProfile(activeChat)}>
                 <Avatar user={{...activeChat,online:isOnline(activeChat)}} size={36} showStatus ring />
                 <div>
                   <div style={{ fontWeight:700,fontSize:14 }}>{activeChat.name}</div>
@@ -492,16 +533,22 @@ export default function App() {
                   {messages.map((msg,i) => {
                     const isMe = msg.from_id===me.id;
                     const isLast = i===messages.length-1;
+                    const isBlocked = blockedUsers.includes(msg.from_id);
+                    if (isBlocked) return null;
                     const time = new Date(msg.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
                     const isEditing = editingMsg?.id === msg.id;
+                    const msgReactions = reactions[msg.id] || [];
+                    const REACT_EMOJIS = ["❤️","😂","😮","😢","😡","👍"];
                     return (
-                      <div key={msg.id} className="msg-in" style={{ display:"flex",flexDirection:isMe?"row-reverse":"row",alignItems:"flex-end",gap:8 }}>
+                      <div key={msg.id} className="msg-in" style={{ display:"flex",flexDirection:isMe?"row-reverse":"row",alignItems:"flex-end",gap:8,marginBottom:2 }}>
                         {!isMe && <Avatar user={activeChat} size={28} />}
                         <div style={{ maxWidth:"74%",display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start" }}>
                           <div
-                            onContextMenu={e=>{e.preventDefault();if(isMe)setMsgMenu({msg,x:e.clientX,y:e.clientY});}}
-                            onTouchStart={isMe?()=>{const t=setTimeout(()=>setMsgMenu({msg,x:0,y:0}),500);return()=>clearTimeout(t)}:undefined}
-                            style={{ background:isMe?"linear-gradient(135deg, #A78BFA, #6366F1)":"#1E1E2A",color:"#fff",borderRadius:isMe?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:msg.type==="image"?4:"10px 14px",fontSize:14,lineHeight:1.55,cursor:isMe?"pointer":"default" }}>
+                            onContextMenu={e=>{e.preventDefault();setMsgMenu({msg,x:e.clientX,y:e.clientY});}}
+                            onTouchStart={()=>{longPressTimer.current=setTimeout(()=>setMsgMenu({msg,x:0,y:0}),500);}}
+                            onTouchEnd={()=>clearTimeout(longPressTimer.current)}
+                            onTouchMove={()=>clearTimeout(longPressTimer.current)}
+                            style={{ background:isMe?"linear-gradient(135deg, #A78BFA, #6366F1)":"#1E1E2A",color:"#fff",borderRadius:isMe?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:msg.type==="image"?4:"10px 14px",fontSize:14,lineHeight:1.55,cursor:"pointer",position:"relative" }}>
                             {msg.type==="image" && (
                               <img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)}
                                 style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block",cursor:"pointer" }} />
@@ -524,8 +571,27 @@ export default function App() {
                               </div>
                             ) : msg.text)}
                           </div>
+                          {/* Reactions */}
+                          {msgReactions.length > 0 && (
+                            <div style={{ display:"flex",gap:4,marginTop:4,flexWrap:"wrap" }}>
+                              {Object.entries(msgReactions.reduce((a,r)=>{a[r.emoji]=(a[r.emoji]||0)+1;return a;},{})).map(([emoji,count])=>(
+                                <span key={emoji} onClick={()=>toggleReaction(msg.id,emoji)} style={{ background:"#1E1E2A",border:"1px solid #2A2A38",borderRadius:20,padding:"2px 8px",fontSize:12,cursor:"pointer" }}>
+                                  {emoji} {count}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {/* React picker */}
+                          {showReactPicker===msg.id && (
+                            <div style={{ display:"flex",gap:6,background:"#1E1E2A",borderRadius:20,padding:"6px 10px",marginTop:4,border:"1px solid #2A2A38",animation:"popIn .15s ease" }}>
+                              {REACT_EMOJIS.map(e=>(
+                                <span key={e} onClick={()=>toggleReaction(msg.id,e)} style={{ fontSize:20,cursor:"pointer" }}>{e}</span>
+                              ))}
+                            </div>
+                          )}
                           <div style={{ fontSize:10,color:"#4B5563",marginTop:4,display:"flex",alignItems:"center",gap:4 }}>
                             {time}
+                            {msg.edited && <span style={{ color:"#6B7280",fontSize:10 }}>· edited</span>}
                             {isMe && isLast && <span style={{ color:msg.seen?"#A78BFA":"#4B5563",fontWeight:700 }}>{msg.seen?" ✓✓":" ✓"}</span>}
                           </div>
                         </div>
@@ -543,20 +609,33 @@ export default function App() {
                 {/* Message context menu */}
                 {msgMenu && (
                   <div onClick={()=>setMsgMenu(null)} style={{ position:"fixed",inset:0,zIndex:100 }}>
-                    <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:100,left:"50%",transform:"translateX(-50%)",background:"#1E1E2A",borderRadius:18,overflow:"hidden",width:220,boxShadow:"0 8px 32px #00000066",border:"1px solid #2A2A38",zIndex:101 }}>
-                      {msgMenu.msg.type==="text" && (
-                        <button onClick={()=>{setEditingMsg({id:msgMenu.msg.id,text:msgMenu.msg.text});setMsgMenu(null);}} style={{ width:"100%",padding:"14px 20px",background:"none",color:"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}>
+                    <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:100,left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:240,boxShadow:"0 8px 40px #00000088",border:"1px solid #2A2A38",zIndex:101 }}>
+                      {/* React row */}
+                      <div style={{ display:"flex",justifyContent:"space-around",padding:"12px 16px",borderBottom:"1px solid #2A2A38" }}>
+                        {["❤️","😂","😮","😢","😡","👍"].map(e=>(
+                          <span key={e} onClick={()=>{toggleReaction(msgMenu.msg.id,e);setMsgMenu(null);}} style={{ fontSize:22,cursor:"pointer" }}>{e}</span>
+                        ))}
+                      </div>
+                      {msgMenu.msg.from_id===me.id && msgMenu.msg.type==="text" && (
+                        <button onClick={()=>{setEditingMsg({id:msgMenu.msg.id,text:msgMenu.msg.text});setMsgMenu(null);}} style={{ width:"100%",padding:"13px 20px",background:"none",color:"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}>
                           ✏️ Edit message
                         </button>
                       )}
                       {msgMenu.msg.type==="image" && (
-                        <button onClick={()=>{setLightbox(msgMenu.msg.data_url);setMsgMenu(null);}} style={{ width:"100%",padding:"14px 20px",background:"none",color:"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}>
+                        <button onClick={()=>{setLightbox(msgMenu.msg.data_url);setMsgMenu(null);}} style={{ width:"100%",padding:"13px 20px",background:"none",color:"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}>
                           🔍 View full image
                         </button>
                       )}
-                      <button onClick={()=>unsendMessage(msgMenu.msg.id)} style={{ width:"100%",padding:"14px 20px",background:"none",color:"#EF4444",fontSize:14,fontWeight:600,textAlign:"left",display:"flex",alignItems:"center",gap:10 }}>
-                        🗑️ Unsend message
-                      </button>
+                      {msgMenu.msg.from_id===me.id && (
+                        <button onClick={()=>unsendMessage(msgMenu.msg.id)} style={{ width:"100%",padding:"13px 20px",background:"none",color:"#EF4444",fontSize:14,fontWeight:600,textAlign:"left",display:"flex",alignItems:"center",gap:10 }}>
+                          🗑️ Unsend message
+                        </button>
+                      )}
+                      {msgMenu.msg.from_id!==me.id && (
+                        <button onClick={()=>{notify("Message reported.",  "#F97316");setMsgMenu(null);}} style={{ width:"100%",padding:"13px 20px",background:"none",color:"#F97316",fontSize:14,fontWeight:600,textAlign:"left",display:"flex",alignItems:"center",gap:10 }}>
+                          🚩 Report message
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -705,6 +784,59 @@ export default function App() {
               </div>
             )}
           </div>
+
+          {/* ── PROFILE SHEET ── */}
+          {viewingProfile && (
+            <div onClick={()=>setViewingProfile(null)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:200,display:"flex",alignItems:"flex-end" }}>
+              <div onClick={e=>e.stopPropagation()} style={{ width:"100%",maxWidth:480,margin:"0 auto",background:"#0F0F1A",borderRadius:"24px 24px 0 0",padding:"0 0 32px",animation:"fadeUp .25s ease",border:"1px solid #1E1E2A" }}>
+                {/* Handle */}
+                <div style={{ width:40,height:4,background:"#2A2A38",borderRadius:4,margin:"12px auto 0" }} />
+                {/* Cover + Avatar */}
+                <div style={{ background:`linear-gradient(135deg, ${viewingProfile.color}44, #141420)`,padding:"24px 24px 16px",textAlign:"center" }}>
+                  <div style={{ position:"relative",display:"inline-block" }}>
+                    <div style={{ width:80,height:80,borderRadius:"50%",background:`linear-gradient(135deg, ${viewingProfile.color}cc, ${viewingProfile.color})`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Mono', monospace",fontWeight:700,fontSize:28,color:"#fff",margin:"0 auto",boxShadow:`0 0 0 3px #0F0F1A, 0 0 0 5px ${viewingProfile.color}` }}>
+                      {(viewingProfile.name||"?").slice(0,2).toUpperCase()}
+                    </div>
+                    <span style={{ position:"absolute",bottom:2,right:2,width:16,height:16,borderRadius:"50%",background:isOnline(viewingProfile)?"#4ADE80":"#4B5563",border:"2px solid #0F0F1A" }} />
+                  </div>
+                  <div style={{ fontWeight:800,fontSize:20,marginTop:12,color:"#E2E8F0" }}>{viewingProfile.name}</div>
+                  <div style={{ color:"#6B7280",fontSize:13,marginTop:2 }}>@{viewingProfile.username}</div>
+                  <div style={{ color:"#9CA3AF",fontSize:13,marginTop:8,lineHeight:1.5 }}>{viewingProfile.bio}</div>
+                  <div style={{ fontSize:12,color:isOnline(viewingProfile)?"#4ADE80":"#6B7280",marginTop:8,fontWeight:600 }}>
+                    {isOnline(viewingProfile)?"● Active now":"● Offline"}
+                  </div>
+                </div>
+                {/* Action buttons */}
+                <div style={{ display:"flex",gap:10,padding:"0 20px 4px" }}>
+                  <button onClick={()=>{setViewingProfile(null);setActiveChat(viewingProfile);setView("chats");}} style={{ flex:1,padding:"11px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",borderRadius:16,fontWeight:700,fontSize:13,border:"none",cursor:"pointer" }}>
+                    💬 Message
+                  </button>
+                  <button onClick={()=>restrictUser(viewingProfile)} style={{ flex:1,padding:"11px",background:restrictedUsers.includes(viewingProfile.id)?"#2A1F44":"#1A1A26",color:restrictedUsers.includes(viewingProfile.id)?"#A78BFA":"#9CA3AF",borderRadius:16,fontWeight:700,fontSize:13,border:"1px solid #2A2A38",cursor:"pointer" }}>
+                    {restrictedUsers.includes(viewingProfile.id)?"✓ Restricted":"🔇 Restrict"}
+                  </button>
+                </div>
+                {/* Options list */}
+                <div style={{ margin:"12px 20px 0",background:"#141420",borderRadius:16,overflow:"hidden",border:"1px solid #1E1E2A" }}>
+                  {[
+                    { label:"View full profile", icon:"👤", action:()=>{}, color:"#E2E8F0" },
+                    { label:"Mute notifications", icon:"🔕", action:()=>notify("Notifications muted."), color:"#E2E8F0" },
+                    { label:"Copy username", icon:"📋", action:()=>{navigator.clipboard?.writeText(`@${viewingProfile.username}`);notify("Username copied!");}, color:"#E2E8F0" },
+                    { label:"Remove friend", icon:"👋", action:()=>removeFriend(viewingProfile), color:"#F97316" },
+                    { label:"Block", icon:"🚫", action:()=>blockUser(viewingProfile), color:"#EF4444" },
+                    { label:"Report", icon:"🚩", action:()=>{notify("Reported.",  "#F97316");setViewingProfile(null);}, color:"#EF4444" },
+                  ].map((opt,i,arr)=>(
+                    <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"14px 18px",background:"none",color:opt.color,fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #1E1E2A":"none",display:"flex",alignItems:"center",gap:12,cursor:"pointer" }}>
+                      <span style={{ fontSize:18 }}>{opt.icon}</span>{opt.label}
+                    </button>
+                  ))}
+                </div>
+                {/* Cancel */}
+                <button onClick={()=>setViewingProfile(null)} style={{ width:"calc(100% - 40px)",margin:"12px 20px 0",padding:14,background:"#1A1A26",color:"#9CA3AF",borderRadius:16,fontSize:14,fontWeight:700,border:"1px solid #2A2A38",cursor:"pointer" }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
 
           {!(view==="chats" && activeChat) && (
             <div style={{ position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0D0D12",borderTop:"1px solid #1A1A26",display:"flex",justifyContent:"space-around",padding:"10px 0 16px",zIndex:10 }}>

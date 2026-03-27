@@ -3,42 +3,30 @@ import { supabase } from "./supabase.js";
 
 const COLORS = ["#FF6B6B","#4ECDC4","#FFE66D","#A8E6CF","#FF8B94","#F0ABFC","#93C5FD","#FCA5A5","#6EE7B7","#FDBA74"];
 const EMOJIS = ["😀","😂","😍","🔥","👍","❤️","🎉","😊","🙌","💯","👀","✨","😭","🥳","🤔","💪","🫡","🤝","🌟","🥰","😎","🙏","💥","🎶","🍕"];
+const REACT_EMOJIS = ["❤️","😂","😮","😢","😡","👍"];
+const CHAT_BGS = [
+  { id:"default", label:"Default", bg:"#0D0D12" },
+  { id:"midnight", label:"Midnight", bg:"linear-gradient(160deg,#0D0D12,#1a0533)" },
+  { id:"ocean", label:"Ocean", bg:"linear-gradient(160deg,#0a1628,#0d2847)" },
+  { id:"forest", label:"Forest", bg:"linear-gradient(160deg,#0a1a0d,#0d2e14)" },
+  { id:"sunset", label:"Sunset", bg:"linear-gradient(160deg,#1a0a0a,#2d1210)" },
+  { id:"rose", label:"Rose", bg:"linear-gradient(160deg,#1a0d18,#2d1429)" },
+  { id:"gold", label:"Gold", bg:"linear-gradient(160deg,#1a1500,#2d2200)" },
+  { id:"slate", label:"Slate", bg:"linear-gradient(160deg,#0e1117,#1a2030)" },
+];
 
-const Avatar = ({ user, size = 42, ring = false, showStatus = false }) => (
-  <div style={{ position: "relative", flexShrink: 0 }}>
-    <div style={{
-      width: size, height: size, borderRadius: "50%",
-      background: `linear-gradient(135deg, ${user.color}cc, ${user.color})`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontFamily: "'DM Mono', monospace", fontWeight: 700,
-      fontSize: Math.max(10, size * 0.31), color: "#fff",
-      boxShadow: ring ? `0 0 0 2px #0D0D12, 0 0 0 3.5px ${user.color}` : "none",
-      letterSpacing: "-0.5px", flexShrink: 0, userSelect: "none",
-    }}>
-      {(user.name || "?").slice(0, 2).toUpperCase()}
+const Avatar = ({ user, size=42, ring=false, showStatus=false, onClick }) => (
+  <div style={{ position:"relative", flexShrink:0, cursor:onClick?"pointer":"default" }} onClick={onClick}>
+    <div style={{ width:size, height:size, borderRadius:"50%", background:`linear-gradient(135deg,${user.color}cc,${user.color})`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'DM Mono',monospace", fontWeight:700, fontSize:Math.max(10,size*0.31), color:"#fff", boxShadow:ring?`0 0 0 2px #0D0D12,0 0 0 3.5px ${user.color}`:"none", userSelect:"none" }}>
+      {(user.name||"?").slice(0,2).toUpperCase()}
     </div>
-    {showStatus && (
-      <span style={{
-        position: "absolute", bottom: 1, right: 1,
-        width: Math.max(8, size * 0.24), height: Math.max(8, size * 0.24),
-        borderRadius: "50%",
-        background: user.online ? "#4ADE80" : "#4B5563",
-        border: "2px solid #0D0D12",
-      }} />
-    )}
+    {showStatus && <span style={{ position:"absolute", bottom:1, right:1, width:Math.max(8,size*0.24), height:Math.max(8,size*0.24), borderRadius:"50%", background:user.online?"#4ADE80":"#4B5563", border:"2px solid #0D0D12" }} />}
   </div>
 );
 
 const TypingBubble = () => (
-  <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "10px 14px",
-    background: "#1E1E2A", borderRadius: "18px 18px 18px 4px", width: "fit-content" }}>
-    {[0,1,2].map(i => (
-      <span key={i} style={{
-        width: 7, height: 7, borderRadius: "50%", background: "#6B7280",
-        display: "inline-block",
-        animation: `typingBounce 1.2s ${i * 0.2}s infinite ease-in-out`,
-      }} />
-    ))}
+  <div style={{ display:"flex", alignItems:"center", gap:4, padding:"10px 14px", background:"#1E1E2A", borderRadius:"18px 18px 18px 4px", width:"fit-content" }}>
+    {[0,1,2].map(i=><span key={i} style={{ width:7, height:7, borderRadius:"50%", background:"#6B7280", display:"inline-block", animation:`typingBounce 1.2s ${i*0.2}s infinite ease-in-out` }} />)}
   </div>
 );
 
@@ -50,16 +38,21 @@ export default function App() {
   const [requests, setRequests] = useState([]);
   const [sentReqs, setSentReqs] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
+  const [chatView, setChatView] = useState("messages"); // messages | info
   const [messages, setMessages] = useState([]);
+  const [pinnedMsgs, setPinnedMsgs] = useState([]);
   const [lastMsgs, setLastMsgs] = useState({});
   const [input, setInput] = useState("");
+  const [replyTo, setReplyTo] = useState(null);
   const [searchQ, setSearchQ] = useState("");
+  const [chatSearchQ, setChatSearchQ] = useState("");
+  const [chatSearchOpen, setChatSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [peerTyping, setPeerTyping] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [toast, setToast] = useState(null);
-  const [authForm, setAuthForm] = useState({ username: "", password: "", name: "", color: COLORS[0] });
+  const [authForm, setAuthForm] = useState({ username:"", password:"", name:"", color:COLORS[0] });
   const [authErr, setAuthErr] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
@@ -67,28 +60,16 @@ export default function App() {
   const [msgMenu, setMsgMenu] = useState(null);
   const [editingMsg, setEditingMsg] = useState(null);
   const [lightbox, setLightbox] = useState(null);
-  const [viewingProfile, setViewingProfile] = useState(null); // user object for profile sheet
+  const [fullProfileUser, setFullProfileUser] = useState(null);
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [restrictedUsers, setRestrictedUsers] = useState([]);
-  const [reactions, setReactions] = useState({}); // msgId -> [{emoji, userId}]
-  const [showReactPicker, setShowReactPicker] = useState(null);
   const [mutedUsers, setMutedUsers] = useState([]);
   const [chatBg, setChatBg] = useState("default");
   const [showBgPicker, setShowBgPicker] = useState(false);
-  const [fullProfileUser, setFullProfileUser] = useState(null);
-  const longPressTimer = useRef(null);
-
-  const CHAT_BACKGROUNDS = [
-    { id:"default", label:"Default", style:{ background:"#0D0D12" } },
-    { id:"midnight", label:"Midnight", style:{ background:"linear-gradient(160deg,#0D0D12 0%,#1a0533 100%)" } },
-    { id:"ocean", label:"Ocean", style:{ background:"linear-gradient(160deg,#0a1628 0%,#0d2847 100%)" } },
-    { id:"forest", label:"Forest", style:{ background:"linear-gradient(160deg,#0a1a0d 0%,#0d2e14 100%)" } },
-    { id:"sunset", label:"Sunset", style:{ background:"linear-gradient(160deg,#1a0a0a 0%,#2d1210 100%)" } },
-    { id:"rose", label:"Rose", style:{ background:"linear-gradient(160deg,#1a0d18 0%,#2d1429 100%)" } },
-    { id:"gold", label:"Gold", style:{ background:"linear-gradient(160deg,#1a1500 0%,#2d2200 100%)" } },
-    { id:"slate", label:"Slate", style:{ background:"linear-gradient(160deg,#0e1117 0%,#1a2030 100%)" } },
-  ];
-  const currentBgStyle = CHAT_BACKGROUNDS.find(b=>b.id===chatBg)?.style || {};
+  const [swipeReply, setSwipeReply] = useState(null); // msg being swiped
+  const [swipeX, setSwipeX] = useState(0);
+  const [nickname, setNickname] = useState("");
+  const [editNickname, setEditNickname] = useState(false);
 
   const fileRef = useRef();
   const chatEndRef = useRef();
@@ -96,377 +77,342 @@ export default function App() {
   const realtimeMsgRef = useRef(null);
   const realtimeTypingRef = useRef(null);
   const heartbeatRef = useRef(null);
+  const longPressTimer = useRef(null);
+  const swipeStartX = useRef(0);
 
-  const notify = (msg, color = "#A78BFA") => {
-    setToast({ msg, color });
-    setTimeout(() => setToast(null), 2800);
-  };
+  const currentBg = CHAT_BGS.find(b=>b.id===chatBg)?.bg || "#0D0D12";
+  const notify = (msg, color="#A78BFA") => { setToast({msg,color}); setTimeout(()=>setToast(null),2800); };
 
-  // Session restore
+  // ── Session restore ───────────────────────────────────────────────────────
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({data:{session}}) => {
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles").select("*").eq("id", session.user.id).single();
-        if (profile) { setMe(profile); setScreen("home"); startHeartbeat(profile.id); }
+        const {data:p} = await supabase.from("profiles").select("*").eq("id",session.user.id).single();
+        if (p) { setMe(p); setScreen("home"); startHeartbeat(p.id); }
       }
     });
   }, []);
 
+  // ── Auth ─────────────────────────────────────────────────────────────────
   const doSignup = async () => {
-    const { username, password, name, color } = authForm;
-    if (!username.trim() || !password || !name.trim()) { setAuthErr("All fields required."); return; }
-    if (username.length < 3) { setAuthErr("Username must be 3+ chars."); return; }
-    if (password.length < 6) { setAuthErr("Password must be 6+ chars."); return; }
+    const {username,password,name,color} = authForm;
+    if (!username.trim()||!password||!name.trim()) { setAuthErr("All fields required."); return; }
+    if (username.length<3) { setAuthErr("Username must be 3+ chars."); return; }
+    if (password.length<6) { setAuthErr("Password must be 6+ chars."); return; }
     setLoading(true); setAuthErr("");
-    const { data: existing } = await supabase.from("profiles")
-      .select("username").eq("username", username.toLowerCase().trim()).maybeSingle();
-    if (existing) { setAuthErr("Username taken."); setLoading(false); return; }
-    const fakeEmail = `${username.toLowerCase().trim()}@pulsesocial.app`;
-    const { data, error } = await supabase.auth.signUp({ email: fakeEmail, password });
+    const {data:ex} = await supabase.from("profiles").select("username").eq("username",username.toLowerCase().trim()).maybeSingle();
+    if (ex) { setAuthErr("Username taken."); setLoading(false); return; }
+    const email = `${username.toLowerCase().trim()}@pulsesocial.app`;
+    const {data,error} = await supabase.auth.signUp({email,password});
     if (error) { setAuthErr(error.message); setLoading(false); return; }
-    const profile = {
-      id: data.user.id, username: username.toLowerCase().trim(),
-      name: name.trim(), bio: "Hey, I'm on Pulse! 👋", color,
-      online: true, last_seen: new Date().toISOString(),
-    };
-    const { error: pe } = await supabase.from("profiles").insert(profile);
+    const profile = { id:data.user.id, username:username.toLowerCase().trim(), name:name.trim(), bio:"Hey, I'm on Pulse! 👋", color, online:true, last_seen:new Date().toISOString() };
+    const {error:pe} = await supabase.from("profiles").insert(profile);
     if (pe) { setAuthErr(pe.message); setLoading(false); return; }
     setMe(profile); setScreen("home"); setLoading(false);
-    notify("Welcome to Pulse! 🎉");
-    startHeartbeat(profile.id);
+    notify("Welcome to Pulse! 🎉"); startHeartbeat(profile.id);
   };
 
   const doLogin = async () => {
-    const { username, password } = authForm;
-    if (!username || !password) { setAuthErr("Fill in all fields."); return; }
+    const {username,password} = authForm;
+    if (!username||!password) { setAuthErr("Fill in all fields."); return; }
     setLoading(true); setAuthErr("");
-    const fakeEmail = `${username.toLowerCase().trim()}@pulsesocial.app`;
-    const { data, error } = await supabase.auth.signInWithPassword({ email: fakeEmail, password });
+    const email = `${username.toLowerCase().trim()}@pulsesocial.app`;
+    const {data,error} = await supabase.auth.signInWithPassword({email,password});
     if (error) { setAuthErr("Wrong username or password."); setLoading(false); return; }
-    const { data: profile } = await supabase.from("profiles").select("*").eq("id", data.user.id).single();
-    if (!profile) { setAuthErr("Profile not found."); setLoading(false); return; }
-    await supabase.from("profiles").update({ online: true, last_seen: new Date().toISOString() }).eq("id", profile.id);
-    setMe({ ...profile, online: true }); setScreen("home"); setLoading(false);
-    notify(`Welcome back, ${profile.name}! 👋`);
-    startHeartbeat(profile.id);
+    const {data:p} = await supabase.from("profiles").select("*").eq("id",data.user.id).single();
+    if (!p) { setAuthErr("Profile not found."); setLoading(false); return; }
+    await supabase.from("profiles").update({online:true,last_seen:new Date().toISOString()}).eq("id",p.id);
+    setMe({...p,online:true}); setScreen("home"); setLoading(false);
+    notify(`Welcome back, ${p.name}! 👋`); startHeartbeat(p.id);
   };
 
   const doLogout = async () => {
     clearInterval(heartbeatRef.current);
-    realtimeMsgRef.current?.unsubscribe();
-    realtimeTypingRef.current?.unsubscribe();
-    if (me) await supabase.from("profiles").update({ online: false, last_seen: new Date().toISOString() }).eq("id", me.id);
+    realtimeMsgRef.current?.unsubscribe(); realtimeTypingRef.current?.unsubscribe();
+    if (me) await supabase.from("profiles").update({online:false,last_seen:new Date().toISOString()}).eq("id",me.id);
     await supabase.auth.signOut();
     setMe(null); setFriends([]); setRequests([]); setSentReqs([]);
     setMessages([]); setActiveChat(null); setLastMsgs({});
-    setScreen("login");
-    setAuthForm({ username: "", password: "", name: "", color: COLORS[0] });
+    setScreen("login"); setAuthForm({username:"",password:"",name:"",color:COLORS[0]});
   };
 
-  const startHeartbeat = (userId) => {
+  const startHeartbeat = (uid) => {
     clearInterval(heartbeatRef.current);
-    heartbeatRef.current = setInterval(async () => {
-      await supabase.from("profiles").update({ online: true, last_seen: new Date().toISOString() }).eq("id", userId);
-    }, 10000);
+    heartbeatRef.current = setInterval(async()=>{
+      await supabase.from("profiles").update({online:true,last_seen:new Date().toISOString()}).eq("id",uid);
+    },10000);
   };
 
+  // ── Social ────────────────────────────────────────────────────────────────
   const loadSocial = useCallback(async () => {
     if (!me) return;
-    const { data: fships } = await supabase.from("friendships")
-      .select("user_a, user_b").or(`user_a.eq.${me.id},user_b.eq.${me.id}`);
-    if (fships?.length) {
-      const ids = fships.map(f => f.user_a === me.id ? f.user_b : f.user_a);
-      const { data: fps } = await supabase.from("profiles").select("*").in("id", ids);
-      setFriends(fps || []);
+    const {data:fs} = await supabase.from("friendships").select("user_a,user_b").or(`user_a.eq.${me.id},user_b.eq.${me.id}`);
+    if (fs?.length) {
+      const ids = fs.map(f=>f.user_a===me.id?f.user_b:f.user_a);
+      const {data:fps} = await supabase.from("profiles").select("*").in("id",ids);
+      setFriends(fps||[]);
     } else setFriends([]);
-    const { data: incoming } = await supabase.from("friend_requests")
-      .select("from_id, profiles!friend_requests_from_id_fkey(*)").eq("to_id", me.id);
-    setRequests(incoming?.map(r => r.profiles) || []);
-    const { data: sent } = await supabase.from("friend_requests").select("to_id").eq("from_id", me.id);
-    setSentReqs(sent?.map(s => s.to_id) || []);
+    const {data:inc} = await supabase.from("friend_requests").select("from_id,profiles!friend_requests_from_id_fkey(*)").eq("to_id",me.id);
+    setRequests(inc?.map(r=>r.profiles)||[]);
+    const {data:sent} = await supabase.from("friend_requests").select("to_id").eq("from_id",me.id);
+    setSentReqs(sent?.map(s=>s.to_id)||[]);
   }, [me]);
 
-  useEffect(() => {
-    if (!me) return;
-    loadSocial();
-    const id = setInterval(loadSocial, 12000);
-    return () => clearInterval(id);
-  }, [me, loadSocial]);
+  useEffect(() => { if (!me) return; loadSocial(); const id=setInterval(loadSocial,12000); return ()=>clearInterval(id); }, [me,loadSocial]);
 
+  // last msgs
   useEffect(() => {
-    if (!me || !friends.length) return;
+    if (!me||!friends.length) return;
     const load = async () => {
-      const lm = {};
+      const lm={};
       for (const f of friends) {
-        const { data } = await supabase.from("messages").select("*")
-          .or(`and(from_id.eq.${me.id},to_id.eq.${f.id}),and(from_id.eq.${f.id},to_id.eq.${me.id})`)
-          .order("created_at", { ascending: false }).limit(1);
-        lm[f.id] = data?.[0] || null;
+        const {data} = await supabase.from("messages").select("*").or(`and(from_id.eq.${me.id},to_id.eq.${f.id}),and(from_id.eq.${f.id},to_id.eq.${me.id})`).order("created_at",{ascending:false}).limit(1);
+        lm[f.id]=data?.[0]||null;
       }
       setLastMsgs(lm);
     };
-    load();
-    const id = setInterval(load, 5000);
-    return () => clearInterval(id);
-  }, [me, friends]);
+    load(); const id=setInterval(load,5000); return ()=>clearInterval(id);
+  }, [me,friends]);
 
+  // ── Messages ──────────────────────────────────────────────────────────────
   const loadMessages = useCallback(async () => {
-    if (!me || !activeChat) return;
-    const { data } = await supabase.from("messages").select("*")
+    if (!me||!activeChat) return;
+    const {data} = await supabase.from("messages").select("*")
       .or(`and(from_id.eq.${me.id},to_id.eq.${activeChat.id}),and(from_id.eq.${activeChat.id},to_id.eq.${me.id})`)
-      .order("created_at", { ascending: true });
-    setMessages(data || []);
-    // Load reactions from DB into state
-    const rxMap = {};
-    (data||[]).forEach(m => { if(m.reactions?.length) rxMap[m.id] = m.reactions; });
-    setReactions(prev => ({...prev, ...rxMap}));
-    const unseen = (data || []).filter(m => m.to_id === me.id && !m.seen);
-    if (unseen.length) await supabase.from("messages").update({ seen: true }).in("id", unseen.map(m => m.id));
-  }, [me, activeChat]);
+      .order("created_at",{ascending:true});
+    setMessages(data||[]);
+    const unseen=(data||[]).filter(m=>m.to_id===me.id&&!m.seen);
+    if (unseen.length) await supabase.from("messages").update({seen:true}).in("id",unseen.map(m=>m.id));
+  }, [me,activeChat]);
 
   useEffect(() => {
-    if (!me || !activeChat) return;
+    if (!me||!activeChat) return;
     loadMessages();
     realtimeMsgRef.current?.unsubscribe();
-    realtimeMsgRef.current = supabase
-      .channel(`chat:${[me.id, activeChat.id].sort().join("_")}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `to_id=eq.${me.id}` }, () => loadMessages())
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `to_id=eq.${me.id}` }, () => loadMessages())
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "messages", filter: `to_id=eq.${me.id}` }, () => loadMessages())
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `from_id=eq.${me.id}` }, () => loadMessages())
+    realtimeMsgRef.current = supabase.channel(`msgs:${[me.id,activeChat.id].sort().join("_")}`)
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`to_id=eq.${me.id}`},()=>loadMessages())
+      .on("postgres_changes",{event:"UPDATE",schema:"public",table:"messages"},()=>loadMessages())
+      .on("postgres_changes",{event:"DELETE",schema:"public",table:"messages"},()=>loadMessages())
       .subscribe();
     realtimeTypingRef.current?.unsubscribe();
-    realtimeTypingRef.current = supabase
-      .channel(`typing:${activeChat.id}_to_${me.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "typing", filter: `from_id=eq.${activeChat.id}` }, (p) => {
-        const age = Date.now() - new Date(p.new?.updated_at).getTime();
-        setPeerTyping(age < 3000);
+    realtimeTypingRef.current = supabase.channel(`typ:${activeChat.id}_${me.id}`)
+      .on("postgres_changes",{event:"*",schema:"public",table:"typing",filter:`from_id=eq.${activeChat.id}`},(p)=>{
+        setPeerTyping(Date.now()-new Date(p.new?.updated_at).getTime()<3000);
       }).subscribe();
-    return () => { realtimeMsgRef.current?.unsubscribe(); realtimeTypingRef.current?.unsubscribe(); };
-  }, [me, activeChat, loadMessages]);
+    return ()=>{ realtimeMsgRef.current?.unsubscribe(); realtimeTypingRef.current?.unsubscribe(); };
+  }, [me,activeChat,loadMessages]);
 
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, peerTyping]);
+  useEffect(()=>{ chatEndRef.current?.scrollIntoView({behavior:"smooth"}); },[messages,peerTyping]);
 
   const signalTyping = async () => {
-    if (!me || !activeChat) return;
-    await supabase.from("typing").upsert({ from_id: me.id, to_id: activeChat.id, updated_at: new Date().toISOString() }, { onConflict: "from_id,to_id" });
+    if (!me||!activeChat) return;
+    await supabase.from("typing").upsert({from_id:me.id,to_id:activeChat.id,updated_at:new Date().toISOString()},{onConflict:"from_id,to_id"});
     clearTimeout(typingTimerRef.current);
-    typingTimerRef.current = setTimeout(async () => {
-      await supabase.from("typing").upsert({ from_id: me.id, to_id: activeChat.id, updated_at: new Date(0).toISOString() }, { onConflict: "from_id,to_id" });
-    }, 2500);
+    typingTimerRef.current = setTimeout(async()=>{
+      await supabase.from("typing").upsert({from_id:me.id,to_id:activeChat.id,updated_at:new Date(0).toISOString()},{onConflict:"from_id,to_id"});
+    },2500);
   };
 
-  const sendMessage = async (text, type = "text", extra = {}) => {
-    if ((!text?.trim() && type === "text") || !activeChat) return;
-    const { data, error } = await supabase.from("messages").insert({
-      from_id: me.id, to_id: activeChat.id,
-      text: type === "text" ? text.trim() : text,
-      type, seen: false, ...extra,
-    }).select().single();
-    if (!error && data) setMessages(p => [...p, data]);
-    setInput(""); setShowEmoji(false);
-    await supabase.from("typing").upsert({ from_id: me.id, to_id: activeChat.id, updated_at: new Date(0).toISOString() }, { onConflict: "from_id,to_id" });
+  const sendMessage = async (text, type="text", extra={}) => {
+    if ((!text?.trim()&&type==="text")||!activeChat) return;
+    const msg = { from_id:me.id, to_id:activeChat.id, text:type==="text"?text.trim():text, type, seen:false, reactions:[], ...extra };
+    if (replyTo) { msg.reply_to_id=replyTo.id; msg.reply_text=replyTo.type==="text"?replyTo.text:"📷 Photo"; msg.reply_from=replyTo.from_id===me.id?"You":activeChat.name; }
+    const {data,error} = await supabase.from("messages").insert(msg).select().single();
+    if (!error&&data) setMessages(p=>[...p,data]);
+    setInput(""); setShowEmoji(false); setReplyTo(null);
+    await supabase.from("typing").upsert({from_id:me.id,to_id:activeChat.id,updated_at:new Date(0).toISOString()},{onConflict:"from_id,to_id"});
   };
 
   const sendFile = async (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    const isImage = file.type.startsWith("image/");
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      await sendMessage(file.name, isImage ? "image" : "file", { data_url: ev.target.result, file_size: (file.size / 1024).toFixed(1) + " KB" });
-      notify(isImage ? "Photo sent 📷" : "File sent 📎");
+    const file=e.target.files[0]; if (!file) return;
+    const isImage=file.type.startsWith("image/");
+    const reader=new FileReader();
+    reader.onload=async(ev)=>{
+      await sendMessage(file.name,isImage?"image":"file",{data_url:ev.target.result,file_size:(file.size/1024).toFixed(1)+" KB"});
+      notify(isImage?"Photo sent 📷":"File sent 📎");
     };
-    reader.readAsDataURL(file); e.target.value = "";
+    reader.readAsDataURL(file); e.target.value="";
   };
 
   const unsendMessage = async (msgId) => {
-    await supabase.from("messages").delete().eq("id", msgId).eq("from_id", me.id);
-    setMessages(p => p.filter(m => m.id !== msgId));
-    setMsgMenu(null);
-    notify("Message unsent.");
+    await supabase.from("messages").delete().eq("id",msgId).eq("from_id",me.id);
+    setMessages(p=>p.filter(m=>m.id!==msgId)); setMsgMenu(null); notify("Message unsent.");
   };
 
   const saveEditedMsg = async () => {
     if (!editingMsg?.text?.trim()) return;
-    await supabase.from("messages").update({ text: editingMsg.text, edited: true }).eq("id", editingMsg.id).eq("from_id", me.id);
-    setMessages(p => p.map(m => m.id === editingMsg.id ? { ...m, text: editingMsg.text, edited: true } : m));
-    setEditingMsg(null);
-    notify("Message edited.");
+    await supabase.from("messages").update({text:editingMsg.text,edited:true}).eq("id",editingMsg.id).eq("from_id",me.id);
+    setMessages(p=>p.map(m=>m.id===editingMsg.id?{...m,text:editingMsg.text,edited:true}:m));
+    setEditingMsg(null); notify("Message edited.");
   };
 
-  const blockUser = async (user) => {
-    setBlockedUsers(p => [...p, user.id]);
-    setViewingProfile(null);
-    setActiveChat(null);
-    setMessages([]);
-    notify(`${user.name} blocked.`, "#EF4444");
+  // ── REACTIONS — stored in DB, synced realtime ─────────────────────────────
+  const toggleReaction = async (msg, emoji) => {
+    const cur = Array.isArray(msg.reactions) ? msg.reactions : [];
+    const exists = cur.find(r=>r.userId===me.id&&r.emoji===emoji);
+    const updated = exists ? cur.filter(r=>!(r.userId===me.id&&r.emoji===emoji)) : [...cur, {emoji,userId:me.id,userName:me.name}];
+    // optimistic update
+    setMessages(p=>p.map(m=>m.id===msg.id?{...m,reactions:updated}:m));
+    await supabase.from("messages").update({reactions:updated}).eq("id",msg.id);
+    setMsgMenu(null);
   };
 
-  const restrictUser = (user) => {
-    setRestrictedUsers(p => p.includes(user.id) ? p.filter(id=>id!==user.id) : [...p, user.id]);
-    const isRestricted = restrictedUsers.includes(user.id);
-    notify(isRestricted ? `${user.name} unrestricted.` : `${user.name} restricted.`);
+  const pinMessage = async (msg) => {
+    setPinnedMsgs(p=>p.find(m=>m.id===msg.id)?p.filter(m=>m.id!==msg.id):[...p,msg]);
+    setMsgMenu(null); notify(pinnedMsgs.find(m=>m.id===msg.id)?"Unpinned.":"Message pinned 📌");
   };
 
-  const removeFriend = async (user) => {
-    const [a, b] = [me.id, user.id].sort();
-    await supabase.from("friendships").delete().or(`and(user_a.eq.${a},user_b.eq.${b})`);
-    setFriends(p => p.filter(f => f.id !== user.id));
-    setViewingProfile(null);
-    setActiveChat(null);
-    setMessages([]);
-    notify(`Removed ${user.name}.`);
+  const forwardMessage = (msg) => {
+    setMsgMenu(null);
+    setInput(msg.type==="text"?msg.text:""); notify("Message copied to input — edit & send!");
   };
 
-  const toggleReaction = async (msgId, emoji) => {
-    // Update local state immediately
-    setReactions(p => {
-      const cur = p[msgId] || [];
-      const exists = cur.find(r => r.userId === me.id && r.emoji === emoji);
-      const updated = exists ? cur.filter(r => !(r.userId===me.id&&r.emoji===emoji)) : [...cur, {emoji, userId: me.id, userName: me.name}];
-      // Persist to DB
-      supabase.from("messages").update({ reactions: updated }).eq("id", msgId);
-      return { ...p, [msgId]: updated };
-    });
-    setShowReactPicker(null);
-  };
-
-  const muteUser = (user) => {
-    const isMuted = mutedUsers.includes(user.id);
-    setMutedUsers(p => isMuted ? p.filter(id=>id!==user.id) : [...p, user.id]);
-    notify(isMuted ? `${user.name} unmuted.` : `${user.name} muted.`);
-  };
-
+  // ── Friend actions ────────────────────────────────────────────────────────
   const sendFriendReq = async (user) => {
-    const { error } = await supabase.from("friend_requests").insert({ from_id: me.id, to_id: user.id });
-    if (error) { notify("Could not send request.", "#EF4444"); return; }
-    setSentReqs(p => [...p, user.id]);
-    notify(`Friend request sent to ${user.name}!`);
+    const {error} = await supabase.from("friend_requests").insert({from_id:me.id,to_id:user.id});
+    if (error) { notify("Could not send request.","#EF4444"); return; }
+    setSentReqs(p=>[...p,user.id]); notify(`Friend request sent to ${user.name}!`);
   };
-
   const acceptReq = async (user) => {
-    const [a, b] = [me.id, user.id].sort();
-    await supabase.from("friendships").insert({ user_a: a, user_b: b });
-    await supabase.from("friend_requests").delete().eq("from_id", user.id).eq("to_id", me.id);
-    setRequests(p => p.filter(u => u.id !== user.id));
-    setFriends(p => [...p, user]);
+    const [a,b]=[me.id,user.id].sort();
+    await supabase.from("friendships").insert({user_a:a,user_b:b});
+    await supabase.from("friend_requests").delete().eq("from_id",user.id).eq("to_id",me.id);
+    setRequests(p=>p.filter(u=>u.id!==user.id)); setFriends(p=>[...p,user]);
     notify(`${user.name} is now your friend! 🎉`);
   };
-
   const declineReq = async (user) => {
-    await supabase.from("friend_requests").delete().eq("from_id", user.id).eq("to_id", me.id);
-    setRequests(p => p.filter(u => u.id !== user.id));
-    notify("Request declined.");
+    await supabase.from("friend_requests").delete().eq("from_id",user.id).eq("to_id",me.id);
+    setRequests(p=>p.filter(u=>u.id!==user.id)); notify("Request declined.");
   };
-
   const doSearch = async () => {
     if (!searchQ.trim()) { setSearchResults([]); return; }
     setSearching(true);
-    const { data } = await supabase.from("profiles").select("*")
-      .ilike("username", `%${searchQ.trim()}%`).neq("id", me.id).limit(10);
-    setSearchResults(data || []); setSearching(false);
-    if (!data?.length) notify("No users found.", "#F97316");
+    const {data} = await supabase.from("profiles").select("*").ilike("username",`%${searchQ.trim()}%`).neq("id",me.id).limit(10);
+    setSearchResults(data||[]); setSearching(false);
+    if (!data?.length) notify("No users found.","#F97316");
   };
-
   const saveProfile = async () => {
-    const updated = { ...me, ...profileDraft };
-    await supabase.from("profiles").update({ name: updated.name, bio: updated.bio, color: updated.color }).eq("id", me.id);
-    setMe(updated); setEditingProfile(false); setProfileDraft({});
-    notify("Profile updated! ✨");
+    const updated={...me,...profileDraft};
+    await supabase.from("profiles").update({name:updated.name,bio:updated.bio,color:updated.color}).eq("id",me.id);
+    setMe(updated); setEditingProfile(false); setProfileDraft({}); notify("Profile updated! ✨");
+  };
+  const blockUser = (user) => { setBlockedUsers(p=>[...p,user.id]); setFullProfileUser(null); setActiveChat(null); setMessages([]); notify(`${user.name} blocked.`,"#EF4444"); };
+  const restrictUser = (user) => { setRestrictedUsers(p=>p.includes(user.id)?p.filter(id=>id!==user.id):[...p,user.id]); notify(restrictedUsers.includes(user.id)?`${user.name} unrestricted.`:`${user.name} restricted.`); };
+  const muteUser = (user) => { setMutedUsers(p=>p.includes(user.id)?p.filter(id=>id!==user.id):[...p,user.id]); notify(mutedUsers.includes(user.id)?`${user.name} unmuted.`:`${user.name} muted.`); };
+  const removeFriend = async (user) => {
+    const [a,b]=[me.id,user.id].sort();
+    await supabase.from("friendships").delete().or(`and(user_a.eq.${a},user_b.eq.${b})`);
+    setFriends(p=>p.filter(f=>f.id!==user.id)); setFullProfileUser(null); setActiveChat(null); setMessages([]); notify(`Removed ${user.name}.`);
+  };
+  const isOnline = (user) => user?.online && Date.now()-new Date(user.last_seen).getTime()<20000;
+
+  // ── Swipe to reply ────────────────────────────────────────────────────────
+  const handleTouchStart = (e, msg) => {
+    swipeStartX.current = e.touches[0].clientX;
+    setSwipeReply(msg);
+  };
+  const handleTouchMove = (e) => {
+    const dx = e.touches[0].clientX - swipeStartX.current;
+    if (dx > 0 && dx < 80) setSwipeX(dx);
+  };
+  const handleTouchEnd = (msg) => {
+    if (swipeX > 50) { setReplyTo(msg); notify("Replying..."); }
+    setSwipeX(0); setSwipeReply(null);
   };
 
-  const isOnline = (user) => user?.online && Date.now() - new Date(user.last_seen).getTime() < 20000;
+  // ── CSS ───────────────────────────────────────────────────────────────────
+  const css = `
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2A2A38;border-radius:10px}
+    input,textarea{outline:none;border:none;background:none;font-family:inherit;color:inherit}
+    button{cursor:pointer;border:none;font-family:inherit}
+    .ripple{transition:all .15s ease}.ripple:active{transform:scale(.97)}
+    @keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+    @keyframes popIn{from{opacity:0;transform:scale(.85) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slideIn{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+    .msg-in{animation:popIn .2s ease}.screen-enter{animation:fadeUp .3s ease}
+    .tab-btn:hover{background:#1A1A26!important}.chat-row:hover{background:#151520!important}
+    input::placeholder{color:#4B5563}
+  `;
+
+  // ── RENDER ────────────────────────────────────────────────────────────────
+  const filteredMessages = chatSearchQ ? messages.filter(m=>m.type==="text"&&m.text.toLowerCase().includes(chatSearchQ.toLowerCase())) : messages;
 
   return (
-    <div style={{
-      fontFamily: "'DM Sans', sans-serif", background: "#0D0D12", minHeight: "100vh", color: "#E2E8F0",
-      maxWidth: 480, margin: "0 auto", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden",
-    }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=DM+Mono:wght@400;500;700&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
-        ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2A2A38;border-radius:10px}
-        input,textarea{outline:none;border:none;background:none;font-family:inherit;color:inherit}
-        button{cursor:pointer;border:none;font-family:inherit}
-        .ripple{transition:all .15s ease}.ripple:active{transform:scale(.97)}
-        @keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
-        @keyframes popIn{from{opacity:0;transform:scale(.85) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-        .msg-in{animation:popIn .2s ease}.screen-enter{animation:fadeUp .3s ease}
-        .tab-btn:hover{background:#1A1A26!important}.chat-row:hover{background:#151520!important}
-        input::placeholder{color:#4B5563}
-      `}</style>
+    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#0D0D12", minHeight:"100vh", color:"#E2E8F0", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
+      <style>{css}</style>
 
-      {toast && (
-        <div style={{ position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:toast.color,color:"#fff",padding:"10px 22px",borderRadius:28,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:`0 4px 24px ${toast.color}66`,animation:"popIn .2s ease",whiteSpace:"nowrap" }}>
-          {toast.msg}
+      {/* Toast */}
+      {toast && <div style={{ position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:toast.color,color:"#fff",padding:"10px 22px",borderRadius:28,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:`0 4px 24px ${toast.color}66`,animation:"popIn .2s ease",whiteSpace:"nowrap" }}>{toast.msg}</div>}
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div onClick={()=>setLightbox(null)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.96)",zIndex:9998,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20 }}>
+          <img src={lightbox} alt="" style={{ maxWidth:"100%",maxHeight:"80vh",borderRadius:12,objectFit:"contain" }} />
+          <div style={{ display:"flex",gap:16,marginTop:24 }}>
+            <a href={lightbox} download="pulse-image.jpg" onClick={e=>e.stopPropagation()} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"12px 28px",borderRadius:24,fontSize:14,fontWeight:700,textDecoration:"none" }}>⬇️ Download</a>
+            <button onClick={()=>setLightbox(null)} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"12px 24px",borderRadius:24,fontSize:14,fontWeight:600,border:"1px solid #2A2A38" }}>Close</button>
+          </div>
         </div>
       )}
 
-      {/* ── FULL PROFILE SCREEN ── */}
+      {/* Full Profile Screen */}
       {fullProfileUser && (
-        <div style={{ position:"fixed",inset:0,background:"#0D0D12",zIndex:300,overflowY:"auto",animation:"fadeUp .25s ease" }}>
-          {/* Header */}
+        <div style={{ position:"fixed",inset:0,background:"#0D0D12",zIndex:300,overflowY:"auto",animation:"slideIn .25s ease" }}>
           <div style={{ padding:"14px 20px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1A1A26",position:"sticky",top:0,background:"#0D0D12",zIndex:10 }}>
-            <button onClick={()=>setFullProfileUser(null)} style={{ background:"#1A1A26",color:"#A78BFA",padding:"7px 14px",borderRadius:20,fontSize:13,fontWeight:700,border:"none",cursor:"pointer" }}>← Back</button>
+            <button onClick={()=>setFullProfileUser(null)} style={{ background:"#1A1A26",color:"#A78BFA",padding:"7px 14px",borderRadius:20,fontSize:13,fontWeight:700,border:"none" }}>← Back</button>
             <div style={{ fontWeight:700,fontSize:15 }}>{fullProfileUser.name}</div>
           </div>
-          {/* Cover banner */}
-          <div style={{ height:140,background:`linear-gradient(135deg, ${fullProfileUser.color}88, ${fullProfileUser.color}22)`,position:"relative" }}>
-            <div style={{ position:"absolute",bottom:-40,left:24 }}>
-              <div style={{ width:80,height:80,borderRadius:"50%",background:`linear-gradient(135deg, ${fullProfileUser.color}cc, ${fullProfileUser.color})`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Mono', monospace",fontWeight:700,fontSize:28,color:"#fff",border:"4px solid #0D0D12" }}>
+          <div style={{ height:140,background:`linear-gradient(135deg,${fullProfileUser.color}88,${fullProfileUser.color}22)`,position:"relative" }}>
+            <div style={{ position:"absolute",bottom:-44,left:24 }}>
+              <div style={{ width:88,height:88,borderRadius:"50%",background:`linear-gradient(135deg,${fullProfileUser.color}cc,${fullProfileUser.color})`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:30,color:"#fff",border:"4px solid #0D0D12" }}>
                 {(fullProfileUser.name||"?").slice(0,2).toUpperCase()}
               </div>
             </div>
           </div>
-          {/* Info */}
-          <div style={{ padding:"52px 24px 24px" }}>
+          <div style={{ padding:"56px 24px 32px" }}>
             <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16 }}>
               <div>
-                <div style={{ fontWeight:800,fontSize:22,color:"#E2E8F0" }}>{fullProfileUser.name}</div>
+                <div style={{ fontWeight:800,fontSize:22 }}>{fullProfileUser.name}</div>
                 <div style={{ color:"#6B7280",fontSize:14,marginTop:2 }}>@{fullProfileUser.username}</div>
+                {nickname && <div style={{ color:"#A78BFA",fontSize:13,marginTop:2 }}>Nickname: {nickname}</div>}
               </div>
-              <div style={{ display:"flex",gap:8 }}>
-                <button onClick={()=>{setFullProfileUser(null);setViewingProfile(null);setActiveChat(fullProfileUser);setView("chats");}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"10px 20px",borderRadius:24,fontSize:13,fontWeight:700,border:"none",cursor:"pointer" }}>
-                  💬 Message
-                </button>
-              </div>
+              <button onClick={()=>{setFullProfileUser(null);setActiveChat(fullProfileUser);setView("chats");setChatView("messages");}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"10px 20px",borderRadius:24,fontSize:13,fontWeight:700,border:"none" }}>💬 Message</button>
             </div>
-            {/* Status badge */}
             <div style={{ display:"inline-flex",alignItems:"center",gap:6,background:isOnline(fullProfileUser)?"#0f2d1a":"#1a1a26",padding:"6px 14px",borderRadius:20,marginBottom:16,border:`1px solid ${isOnline(fullProfileUser)?"#4ADE8033":"#2A2A38"}` }}>
               <span style={{ width:8,height:8,borderRadius:"50%",background:isOnline(fullProfileUser)?"#4ADE80":"#4B5563",display:"inline-block" }} />
               <span style={{ fontSize:13,color:isOnline(fullProfileUser)?"#4ADE80":"#6B7280",fontWeight:600 }}>{isOnline(fullProfileUser)?"Active now":"Offline"}</span>
             </div>
-            {/* Bio */}
             <div style={{ background:"#141420",borderRadius:16,padding:16,marginBottom:16,border:"1px solid #1E1E2A" }}>
               <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:8 }}>About</div>
-              <div style={{ color:"#C4C4D4",fontSize:14,lineHeight:1.6 }}>{fullProfileUser.bio || "No bio yet."}</div>
+              <div style={{ color:"#C4C4D4",fontSize:14,lineHeight:1.6 }}>{fullProfileUser.bio||"No bio yet."}</div>
             </div>
-            {/* Stats row */}
-            <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16 }}>
-              {[
-                {label:"Friends",value:friends.filter(f=>f.id===fullProfileUser.id||fullProfileUser.id===f.id).length > 0 ? "✓":"−",icon:"👥"},
-                {label:"Status",value:isOnline(fullProfileUser)?"Online":"Away",icon:"🟢"},
-                {label:"Member",value:"Active",icon:"⚡"},
-              ].map(s=>(
-                <div key={s.label} style={{ background:"#141420",borderRadius:14,padding:"14px 10px",textAlign:"center",border:"1px solid #1E1E2A" }}>
-                  <div style={{ fontSize:22 }}>{s.icon}</div>
-                  <div style={{ fontWeight:700,fontSize:14,color:"#A78BFA",marginTop:4 }}>{s.value}</div>
-                  <div style={{ fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginTop:2 }}>{s.label}</div>
+            {/* Nickname */}
+            <div style={{ background:"#141420",borderRadius:16,padding:16,marginBottom:16,border:"1px solid #1E1E2A" }}>
+              <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:8 }}>Nickname</div>
+              {editNickname ? (
+                <div style={{ display:"flex",gap:8 }}>
+                  <input value={nickname} onChange={e=>setNickname(e.target.value)} placeholder="Set a nickname..." style={{ flex:1,background:"#1A1A26",borderRadius:10,padding:"8px 12px",fontSize:14,border:"1px solid #2A2A38" }} />
+                  <button onClick={()=>{setEditNickname(false);notify("Nickname saved!");}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:700 }}>Save</button>
                 </div>
-              ))}
+              ) : (
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                  <span style={{ color:nickname?"#E2E8F0":"#4B5563",fontSize:14 }}>{nickname||"No nickname set"}</span>
+                  <button onClick={()=>setEditNickname(true)} style={{ background:"#1A1A26",color:"#A78BFA",padding:"6px 12px",borderRadius:10,fontSize:12,fontWeight:700,border:"1px solid #2A2A38" }}>Edit</button>
+                </div>
+              )}
             </div>
-            {/* Actions */}
             <div style={{ background:"#141420",borderRadius:16,overflow:"hidden",border:"1px solid #1E1E2A" }}>
               {[
                 {label:mutedUsers.includes(fullProfileUser.id)?"Unmute notifications":"Mute notifications",icon:mutedUsers.includes(fullProfileUser.id)?"🔔":"🔕",action:()=>muteUser(fullProfileUser),color:"#E2E8F0"},
                 {label:restrictedUsers.includes(fullProfileUser.id)?"Remove restriction":"Restrict",icon:"🔇",action:()=>restrictUser(fullProfileUser),color:"#E2E8F0"},
                 {label:"Remove friend",icon:"👋",action:()=>removeFriend(fullProfileUser),color:"#F97316"},
                 {label:"Block",icon:"🚫",action:()=>blockUser(fullProfileUser),color:"#EF4444"},
-                {label:"Report",icon:"🚩",action:()=>{notify("Reported.",  "#F97316");setFullProfileUser(null);},color:"#EF4444"},
+                {label:"Report",icon:"🚩",action:()=>{notify("Reported.","#F97316");setFullProfileUser(null);},color:"#EF4444"},
               ].map((opt,i,arr)=>(
-                <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"15px 18px",background:"none",color:opt.color,fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #1E1E2A":"none",display:"flex",alignItems:"center",gap:12,cursor:"pointer",border:"none" }}>
+                <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"14px 18px",background:"none",color:opt.color,fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #1E1E2A":"none",display:"flex",alignItems:"center",gap:12,cursor:"pointer",border:"none" }}>
                   <span style={{ fontSize:18 }}>{opt.icon}</span>{opt.label}
                 </button>
               ))}
@@ -475,155 +421,199 @@ export default function App() {
         </div>
       )}
 
-      {/* ── CHAT BG PICKER ── */}
+      {/* BG Picker */}
       {showBgPicker && (
         <div onClick={()=>setShowBgPicker(false)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:250,display:"flex",alignItems:"flex-end" }}>
           <div onClick={e=>e.stopPropagation()} style={{ width:"100%",maxWidth:480,margin:"0 auto",background:"#0F0F1A",borderRadius:"24px 24px 0 0",padding:"20px 20px 40px",border:"1px solid #1E1E2A" }}>
             <div style={{ width:40,height:4,background:"#2A2A38",borderRadius:4,margin:"0 auto 20px" }} />
-            <div style={{ fontWeight:700,fontSize:16,marginBottom:16,color:"#E2E8F0" }}>Chat Background</div>
+            <div style={{ fontWeight:700,fontSize:16,marginBottom:16 }}>Chat Background</div>
             <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10 }}>
-              {CHAT_BACKGROUNDS.map(bg=>(
-                <div key={bg.id} onClick={()=>{setChatBg(bg.id);setShowBgPicker(false);}} style={{ borderRadius:14,overflow:"hidden",cursor:"pointer",border:chatBg===bg.id?"2px solid #A78BFA":"2px solid transparent",transition:"all .15s" }}>
-                  <div style={{ height:70,...bg.style }} />
-                  <div style={{ background:"#141420",padding:"6px 4px",textAlign:"center",fontSize:10,fontWeight:700,color:chatBg===bg.id?"#A78BFA":"#6B7280",textTransform:"uppercase",letterSpacing:.5 }}>{bg.label}</div>
+              {CHAT_BGS.map(bg=>(
+                <div key={bg.id} onClick={()=>{setChatBg(bg.id);setShowBgPicker(false);}} style={{ borderRadius:14,overflow:"hidden",cursor:"pointer",border:chatBg===bg.id?"2px solid #A78BFA":"2px solid transparent" }}>
+                  <div style={{ height:70,background:bg.bg }} />
+                  <div style={{ background:"#141420",padding:"6px 4px",textAlign:"center",fontSize:10,fontWeight:700,color:chatBg===bg.id?"#A78BFA":"#6B7280",textTransform:"uppercase" }}>{bg.label}</div>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Lightbox */}
-      {lightbox && (
-        <div onClick={()=>setLightbox(null)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:9998,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20 }}>
-          <img src={lightbox} alt="" style={{ maxWidth:"100%",maxHeight:"80vh",borderRadius:12,objectFit:"contain" }} />
-          <div style={{ display:"flex",gap:16,marginTop:24 }}>
-            <a href={lightbox} download="pulse-image.jpg" onClick={e=>e.stopPropagation()} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"12px 28px",borderRadius:24,fontSize:14,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:8 }}>
-              ⬇️ Download
-            </a>
-            <button onClick={()=>setLightbox(null)} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"12px 24px",borderRadius:24,fontSize:14,fontWeight:600,border:"1px solid #2A2A38" }}>
-              Close
-            </button>
           </div>
         </div>
       )}
 
       {/* SPLASH */}
-      {screen === "splash" && (
+      {screen==="splash" && (
         <div className="screen-enter" style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:32 }}>
-          <div style={{ width:80,height:80,borderRadius:24,background:"linear-gradient(135deg, #A78BFA, #6366F1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:38,marginBottom:24,boxShadow:"0 0 60px #A78BFA55" }}>⚡</div>
-          <div style={{ fontFamily:"'DM Mono', monospace",fontWeight:700,fontSize:36,letterSpacing:"-2px",background:"linear-gradient(135deg, #A78BFA, #6366F1, #EC4899)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>pulse</div>
+          <div style={{ width:80,height:80,borderRadius:24,background:"linear-gradient(135deg,#A78BFA,#6366F1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:38,marginBottom:24,boxShadow:"0 0 60px #A78BFA55" }}>⚡</div>
+          <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:36,letterSpacing:"-2px",background:"linear-gradient(135deg,#A78BFA,#6366F1,#EC4899)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>pulse</div>
           <div style={{ color:"#4B5563",fontSize:14,marginTop:8,marginBottom:48 }}>Real connections. Live.</div>
-          <button className="ripple" onClick={() => setScreen("signup")} style={{ width:"100%",padding:15,borderRadius:18,background:"linear-gradient(135deg, #A78BFA, #6366F1)",color:"#fff",fontWeight:700,fontSize:16,marginBottom:12 }}>Create Account</button>
-          <button className="ripple" onClick={() => setScreen("login")} style={{ width:"100%",padding:15,borderRadius:18,background:"#1A1A26",color:"#A78BFA",fontWeight:700,fontSize:16,border:"1px solid #2A2A38" }}>Sign In</button>
+          <button className="ripple" onClick={()=>setScreen("signup")} style={{ width:"100%",padding:15,borderRadius:18,background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",fontWeight:700,fontSize:16,marginBottom:12 }}>Create Account</button>
+          <button className="ripple" onClick={()=>setScreen("login")} style={{ width:"100%",padding:15,borderRadius:18,background:"#1A1A26",color:"#A78BFA",fontWeight:700,fontSize:16,border:"1px solid #2A2A38" }}>Sign In</button>
         </div>
       )}
 
       {/* SIGNUP */}
-      {screen === "signup" && (
+      {screen==="signup" && (
         <div className="screen-enter" style={{ flex:1,padding:"48px 28px 32px",display:"flex",flexDirection:"column",minHeight:"100vh",overflowY:"auto" }}>
-          <button onClick={() => setScreen("splash")} style={{ background:"none",color:"#6B7280",fontSize:22,marginBottom:24,alignSelf:"flex-start" }}>←</button>
-          <div style={{ fontFamily:"'DM Mono', monospace",fontWeight:700,fontSize:28,letterSpacing:"-1px",background:"linear-gradient(135deg, #A78BFA, #6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6 }}>Join Pulse</div>
+          <button onClick={()=>setScreen("splash")} style={{ background:"none",color:"#6B7280",fontSize:22,marginBottom:24,alignSelf:"flex-start" }}>←</button>
+          <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:28,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6 }}>Join Pulse</div>
           <div style={{ color:"#4B5563",fontSize:14,marginBottom:32 }}>Create your account to get started.</div>
-          {["name","username","password"].map(field => (
+          {["name","username","password"].map(field=>(
             <div key={field} style={{ marginBottom:14 }}>
               <div style={{ fontSize:11,fontWeight:700,color:"#6B7280",letterSpacing:1,textTransform:"uppercase",marginBottom:6 }}>{field==="name"?"Display Name":field.charAt(0).toUpperCase()+field.slice(1)}</div>
-              <input type={field==="password"?"password":"text"} value={authForm[field]}
-                onChange={e => setAuthForm(p=>({...p,[field]:e.target.value}))}
-                onKeyDown={e => e.key==="Enter" && doSignup()}
-                placeholder={field==="name"?"Your name":field==="username"?"unique_handle":"••••••••"}
-                style={{ width:"100%",background:"#1A1A26",borderRadius:14,padding:"13px 16px",fontSize:15,border:"1px solid #2A2A38" }}
-              />
+              <input type={field==="password"?"password":"text"} value={authForm[field]} onChange={e=>setAuthForm(p=>({...p,[field]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&doSignup()} placeholder={field==="name"?"Your name":field==="username"?"unique_handle":"••••••••"} style={{ width:"100%",background:"#1A1A26",borderRadius:14,padding:"13px 16px",fontSize:15,border:"1px solid #2A2A38" }} />
             </div>
           ))}
           <div style={{ marginBottom:28 }}>
             <div style={{ fontSize:11,fontWeight:700,color:"#6B7280",letterSpacing:1,textTransform:"uppercase",marginBottom:10 }}>Avatar Color</div>
             <div style={{ display:"flex",gap:10,flexWrap:"wrap" }}>
-              {COLORS.map(c => (
-                <div key={c} onClick={()=>setAuthForm(p=>({...p,color:c}))} style={{ width:32,height:32,borderRadius:"50%",background:c,cursor:"pointer",border:authForm.color===c?"3px solid #fff":"3px solid transparent",boxShadow:authForm.color===c?`0 0 12px ${c}`:"none",transition:"all .15s" }} />
-              ))}
+              {COLORS.map(c=><div key={c} onClick={()=>setAuthForm(p=>({...p,color:c}))} style={{ width:32,height:32,borderRadius:"50%",background:c,cursor:"pointer",border:authForm.color===c?"3px solid #fff":"3px solid transparent",boxShadow:authForm.color===c?`0 0 12px ${c}`:"none",transition:"all .15s" }} />)}
             </div>
           </div>
           {authErr && <div style={{ color:"#F87171",fontSize:13,marginBottom:14,fontWeight:600 }}>⚠ {authErr}</div>}
-          <button className="ripple" onClick={doSignup} disabled={loading} style={{ width:"100%",padding:15,borderRadius:18,background:loading?"#2A2A38":"linear-gradient(135deg, #A78BFA, #6366F1)",color:"#fff",fontWeight:800,fontSize:15 }}>
-            {loading?"Creating...":"Create Account →"}
-          </button>
-          <div style={{ textAlign:"center",marginTop:20,color:"#4B5563",fontSize:13 }}>
-            Already have an account?{" "}<span onClick={()=>{setScreen("login");setAuthErr("");}} style={{ color:"#A78BFA",fontWeight:700,cursor:"pointer" }}>Sign In</span>
-          </div>
+          <button className="ripple" onClick={doSignup} disabled={loading} style={{ width:"100%",padding:15,borderRadius:18,background:loading?"#2A2A38":"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",fontWeight:800,fontSize:15 }}>{loading?"Creating...":"Create Account →"}</button>
+          <div style={{ textAlign:"center",marginTop:20,color:"#4B5563",fontSize:13 }}>Already have an account?{" "}<span onClick={()=>{setScreen("login");setAuthErr("");}} style={{ color:"#A78BFA",fontWeight:700,cursor:"pointer" }}>Sign In</span></div>
         </div>
       )}
 
       {/* LOGIN */}
-      {screen === "login" && (
+      {screen==="login" && (
         <div className="screen-enter" style={{ flex:1,padding:"48px 28px 32px",display:"flex",flexDirection:"column",minHeight:"100vh" }}>
-          <button onClick={() => setScreen("splash")} style={{ background:"none",color:"#6B7280",fontSize:22,marginBottom:24,alignSelf:"flex-start" }}>←</button>
-          <div style={{ fontFamily:"'DM Mono', monospace",fontWeight:700,fontSize:28,letterSpacing:"-1px",background:"linear-gradient(135deg, #A78BFA, #6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6 }}>Welcome back</div>
+          <button onClick={()=>setScreen("splash")} style={{ background:"none",color:"#6B7280",fontSize:22,marginBottom:24,alignSelf:"flex-start" }}>←</button>
+          <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:28,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6 }}>Welcome back</div>
           <div style={{ color:"#4B5563",fontSize:14,marginBottom:32 }}>Sign in to continue.</div>
-          {["username","password"].map(field => (
+          {["username","password"].map(field=>(
             <div key={field} style={{ marginBottom:14 }}>
               <div style={{ fontSize:11,fontWeight:700,color:"#6B7280",letterSpacing:1,textTransform:"uppercase",marginBottom:6 }}>{field.charAt(0).toUpperCase()+field.slice(1)}</div>
-              <input type={field==="password"?"password":"text"} value={authForm[field]}
-                onChange={e => setAuthForm(p=>({...p,[field]:e.target.value}))}
-                onKeyDown={e => e.key==="Enter" && doLogin()}
-                placeholder={field==="username"?"your_username":"••••••••"}
-                style={{ width:"100%",background:"#1A1A26",borderRadius:14,padding:"13px 16px",fontSize:15,border:"1px solid #2A2A38" }}
-              />
+              <input type={field==="password"?"password":"text"} value={authForm[field]} onChange={e=>setAuthForm(p=>({...p,[field]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&doLogin()} placeholder={field==="username"?"your_username":"••••••••"} style={{ width:"100%",background:"#1A1A26",borderRadius:14,padding:"13px 16px",fontSize:15,border:"1px solid #2A2A38" }} />
             </div>
           ))}
           {authErr && <div style={{ color:"#F87171",fontSize:13,marginBottom:14,fontWeight:600 }}>⚠ {authErr}</div>}
-          <button className="ripple" onClick={doLogin} disabled={loading} style={{ width:"100%",padding:15,borderRadius:18,background:loading?"#2A2A38":"linear-gradient(135deg, #A78BFA, #6366F1)",color:"#fff",fontWeight:800,fontSize:15,marginTop:8 }}>
-            {loading?"Signing in...":"Sign In →"}
-          </button>
-          <div style={{ textAlign:"center",marginTop:20,color:"#4B5563",fontSize:13 }}>
-            New here?{" "}<span onClick={()=>{setScreen("signup");setAuthErr("");}} style={{ color:"#A78BFA",fontWeight:700,cursor:"pointer" }}>Create account</span>
-          </div>
+          <button className="ripple" onClick={doLogin} disabled={loading} style={{ width:"100%",padding:15,borderRadius:18,background:loading?"#2A2A38":"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",fontWeight:800,fontSize:15,marginTop:8 }}>{loading?"Signing in...":"Sign In →"}</button>
+          <div style={{ textAlign:"center",marginTop:20,color:"#4B5563",fontSize:13 }}>New here?{" "}<span onClick={()=>{setScreen("signup");setAuthErr("");}} style={{ color:"#A78BFA",fontWeight:700,cursor:"pointer" }}>Create account</span></div>
         </div>
       )}
 
       {/* HOME */}
-      {screen === "home" && me && (
+      {screen==="home" && me && (
         <>
+          {/* Top Bar */}
           <div style={{ padding:"14px 20px",borderBottom:"1px solid #1A1A26",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#0D0D12",position:"sticky",top:0,zIndex:20 }}>
             {activeChat && view==="chats" ? (
-              <button onClick={()=>{setActiveChat(null);setMessages([]);setShowEmoji(false);setPeerTyping(false);}} style={{ background:"#1A1A26",color:"#A78BFA",padding:"7px 14px",borderRadius:20,fontSize:13,fontWeight:700 }}>← Back</button>
+              <button onClick={()=>{setActiveChat(null);setMessages([]);setShowEmoji(false);setPeerTyping(false);setChatView("messages");setChatSearchOpen(false);}} style={{ background:"#1A1A26",color:"#A78BFA",padding:"7px 14px",borderRadius:20,fontSize:13,fontWeight:700 }}>← Back</button>
             ) : (
-              <div style={{ fontFamily:"'DM Mono', monospace",fontWeight:700,fontSize:22,letterSpacing:"-1px",background:"linear-gradient(135deg, #A78BFA, #6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>pulse</div>
+              <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:22,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>pulse</div>
             )}
             {activeChat && view==="chats" ? (
-              <div style={{ display:"flex",alignItems:"center",gap:10,cursor:"pointer" }} onClick={()=>setViewingProfile(activeChat)}>
+              <div style={{ display:"flex",alignItems:"center",gap:10,cursor:"pointer",flex:1,marginLeft:12 }} onClick={()=>setChatView(v=>v==="messages"?"info":"messages")}>
                 <Avatar user={{...activeChat,online:isOnline(activeChat)}} size={36} showStatus ring />
                 <div>
-                  <div style={{ fontWeight:700,fontSize:14 }}>{activeChat.name}</div>
+                  <div style={{ fontWeight:700,fontSize:14 }}>{nickname||activeChat.name}</div>
                   <div style={{ fontSize:11,color:isOnline(activeChat)?"#4ADE80":"#6B7280" }}>{isOnline(activeChat)?"● Active now":"● Offline"}</div>
                 </div>
               </div>
             ) : (
               <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-                {requests.length > 0 && <span style={{ background:"#EF4444",color:"#fff",borderRadius:20,fontSize:11,fontWeight:700,padding:"2px 8px" }}>{requests.length} req</span>}
+                {requests.length>0 && <span style={{ background:"#EF4444",color:"#fff",borderRadius:20,fontSize:11,fontWeight:700,padding:"2px 8px" }}>{requests.length} req</span>}
                 <Avatar user={me} size={32} />
               </div>
             )}
+            {activeChat && view==="chats" && (
+              <button onClick={()=>setChatSearchOpen(o=>!o)} style={{ background:"#1A1A26",borderRadius:"50%",width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#A78BFA",flexShrink:0 }}>🔍</button>
+            )}
           </div>
+
+          {/* Chat search bar */}
+          {activeChat && chatSearchOpen && (
+            <div style={{ padding:"8px 16px",borderBottom:"1px solid #1A1A26",background:"#0D0D12" }}>
+              <input value={chatSearchQ} onChange={e=>setChatSearchQ(e.target.value)} placeholder="Search messages..." style={{ width:"100%",background:"#1A1A26",borderRadius:24,padding:"9px 16px",fontSize:14,border:"1px solid #2A2A38" }} autoFocus />
+            </div>
+          )}
 
           <div style={{ flex:1,overflowY:"auto",paddingBottom:activeChat?0:72 }}>
 
-            {/* CHATS LIST */}
+            {/* ── CHAT INFO VIEW ── */}
+            {view==="chats" && activeChat && chatView==="info" && (
+              <div style={{ padding:0 }}>
+                {/* Banner */}
+                <div style={{ height:120,background:`linear-gradient(135deg,${activeChat.color}66,${activeChat.color}22)`,display:"flex",alignItems:"flex-end",padding:"0 20px 16px" }}>
+                  <Avatar user={{...activeChat,online:isOnline(activeChat)}} size={72} showStatus ring />
+                  <div style={{ marginLeft:16 }}>
+                    <div style={{ fontWeight:800,fontSize:20 }}>{nickname||activeChat.name}</div>
+                    <div style={{ color:"#6B7280",fontSize:13 }}>@{activeChat.username}</div>
+                  </div>
+                </div>
+                {/* Quick actions */}
+                <div style={{ display:"flex",justifyContent:"space-around",padding:"20px 16px",borderBottom:"1px solid #1A1A26" }}>
+                  {[
+                    {icon:"💬",label:"Message",action:()=>setChatView("messages")},
+                    {icon:mutedUsers.includes(activeChat.id)?"🔔":"🔕",label:mutedUsers.includes(activeChat.id)?"Unmute":"Mute",action:()=>muteUser(activeChat)},
+                    {icon:"🔍",label:"Search",action:()=>{setChatView("messages");setChatSearchOpen(true);}},
+                    {icon:"⋯",label:"More",action:()=>setFullProfileUser(activeChat)},
+                  ].map(a=>(
+                    <button key={a.label} onClick={a.action} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:6,background:"none",color:"#E2E8F0",cursor:"pointer" }}>
+                      <div style={{ width:48,height:48,borderRadius:"50%",background:"#1A1A26",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,border:"1px solid #2A2A38" }}>{a.icon}</div>
+                      <span style={{ fontSize:11,color:"#6B7280",fontWeight:600 }}>{a.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {/* Options list */}
+                <div style={{ margin:"12px 16px",background:"#141420",borderRadius:16,overflow:"hidden",border:"1px solid #1E1E2A" }}>
+                  {[
+                    {icon:"🎨",label:"Chat theme",sub:CHAT_BGS.find(b=>b.id===chatBg)?.label||"Default",action:()=>setShowBgPicker(true)},
+                    {icon:"📌",label:"Pinned messages",sub:`${pinnedMsgs.length} pinned`,action:()=>{}},
+                    {icon:"🖼️",label:"Media",sub:`${messages.filter(m=>m.type==="image").length} photos`,action:()=>{}},
+                    {icon:"🏷️",label:"Nicknames",sub:nickname||"None set",action:()=>setFullProfileUser(activeChat)},
+                    {icon:"🔇",label:mutedUsers.includes(activeChat.id)?"Unmute notifications":"Mute notifications",sub:"",action:()=>muteUser(activeChat)},
+                    {icon:"🚫",label:"Block",sub:"",action:()=>blockUser(activeChat),red:true},
+                    {icon:"🚩",label:"Report",sub:"",action:()=>notify("Reported.","#F97316"),red:true},
+                  ].map((opt,i,arr)=>(
+                    <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"14px 18px",background:"none",color:opt.red?"#EF4444":"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #1E1E2A":"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",border:"none" }}>
+                      <span style={{ fontSize:20,width:28 }}>{opt.icon}</span>
+                      <div style={{ flex:1 }}>
+                        <div>{opt.label}</div>
+                        {opt.sub&&<div style={{ fontSize:12,color:"#4B5563",fontWeight:400,marginTop:1 }}>{opt.sub}</div>}
+                      </div>
+                      <span style={{ color:"#4B5563",fontSize:14 }}>›</span>
+                    </button>
+                  ))}
+                </div>
+                {/* Media grid */}
+                {messages.filter(m=>m.type==="image").length > 0 && (
+                  <div style={{ margin:"0 16px 20px" }}>
+                    <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:10 }}>Media</div>
+                    <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:3,borderRadius:12,overflow:"hidden" }}>
+                      {messages.filter(m=>m.type==="image").slice(-9).map(m=>(
+                        <img key={m.id} src={m.data_url} alt="" onClick={()=>setLightbox(m.data_url)} style={{ width:"100%",aspectRatio:"1",objectFit:"cover",cursor:"pointer" }} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Pinned */}
+                {pinnedMsgs.length > 0 && (
+                  <div style={{ margin:"0 16px 20px" }}>
+                    <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:10 }}>Pinned Messages</div>
+                    {pinnedMsgs.map(m=>(
+                      <div key={m.id} style={{ background:"#141420",borderRadius:12,padding:"12px 14px",marginBottom:8,border:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}>
+                        <span style={{ fontSize:18 }}>📌</span>
+                        <div style={{ flex:1,fontSize:13,color:"#C4C4D4",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{m.text}</div>
+                        <button onClick={()=>pinMessage(m)} style={{ background:"none",color:"#4B5563",fontSize:12,border:"none" }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── CHATS LIST ── */}
             {view==="chats" && !activeChat && (
               <div style={{ padding:"16px 20px 6px" }}>
                 <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:14 }}>Messages</div>
-                {friends.length===0 && (
-                  <div style={{ textAlign:"center",color:"#4B5563",padding:"40px 0",fontSize:14 }}>
-                    <div style={{ fontSize:42,marginBottom:12 }}>💬</div>Add friends to start chatting!
-                  </div>
-                )}
-                {friends.map(user => {
-                  const lm = lastMsgs[user.id];
-                  const online = isOnline(user);
-                  const unread = lm && !lm.seen && lm.from_id !== me.id;
-                  const time = lm ? new Date(lm.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) : "";
+                {friends.length===0 && <div style={{ textAlign:"center",color:"#4B5563",padding:"40px 0",fontSize:14 }}><div style={{ fontSize:42,marginBottom:12 }}>💬</div>Add friends to start chatting!</div>}
+                {friends.map(user=>{
+                  const lm=lastMsgs[user.id]; const online=isOnline(user); const unread=lm&&!lm.seen&&lm.from_id!==me.id;
+                  const time=lm?new Date(lm.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"";
+                  if (blockedUsers.includes(user.id)) return null;
                   return (
-                    <div key={user.id} className="chat-row" onClick={()=>setActiveChat(user)} style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",transition:"background .15s",borderRadius:12 }}>
+                    <div key={user.id} className="chat-row" onClick={()=>{setActiveChat(user);setChatView("messages");}} style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:12 }}>
                       <Avatar user={{...user,online}} size={50} showStatus />
                       <div style={{ flex:1,minWidth:0 }}>
                         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
@@ -631,199 +621,177 @@ export default function App() {
                           <div style={{ fontSize:11,color:"#4B5563" }}>{time}</div>
                         </div>
                         <div style={{ fontSize:13,color:unread?"#A78BFA":"#6B7280",marginTop:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontWeight:unread?600:400 }}>
+                          {mutedUsers.includes(user.id)&&<span style={{ fontSize:11 }}>🔕 </span>}
                           {lm?(lm.type==="image"?"📷 Photo":lm.type==="file"?`📎 ${lm.text}`:(lm.from_id===me.id?`You: ${lm.text}`:lm.text)):"Say hello! 👋"}
                         </div>
                       </div>
-                      {unread && <div style={{ width:10,height:10,borderRadius:"50%",background:"#A78BFA",flexShrink:0 }} />}
+                      {unread&&<div style={{ width:10,height:10,borderRadius:"50%",background:"#A78BFA",flexShrink:0 }} />}
                     </div>
                   );
                 })}
               </div>
             )}
 
-            {/* CHAT WINDOW */}
-            {view==="chats" && activeChat && (
-              <div style={{ display:"flex",flexDirection:"column",height:"calc(100vh - 62px)",...currentBgStyle }} onClick={()=>setMsgMenu(null)}>
-                <div style={{ flex:1,overflowY:"auto",padding:"16px 20px 8px",display:"flex",flexDirection:"column",gap:8 }}>
-                  {messages.length===0 && (
-                    <div style={{ textAlign:"center",color:"#4B5563",marginTop:60,fontSize:14 }}>
-                      <div style={{ fontSize:44,marginBottom:12 }}>👋</div>Say hello to {activeChat.name}!
-                    </div>
-                  )}
-                  {messages.map((msg,i) => {
-                    const isMe = msg.from_id===me.id;
-                    const isLast = i===messages.length-1;
-                    const isBlocked = blockedUsers.includes(msg.from_id);
-                    if (isBlocked) return null;
-                    const time = new Date(msg.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
-                    const isEditing = editingMsg?.id === msg.id;
-                    const msgReactions = reactions[msg.id] || [];
-                    const REACT_EMOJIS = ["❤️","😂","😮","😢","😡","👍"];
+            {/* ── CHAT MESSAGES ── */}
+            {view==="chats" && activeChat && chatView==="messages" && (
+              <div style={{ display:"flex",flexDirection:"column",height:`calc(100vh - ${chatSearchOpen?118:62}px)`,background:currentBg }} onClick={()=>setMsgMenu(null)}>
+                {/* Pinned banner */}
+                {pinnedMsgs.length>0 && (
+                  <div style={{ padding:"8px 16px",background:"#141420",borderBottom:"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:8 }}>
+                    <span>📌</span>
+                    <span style={{ fontSize:13,color:"#C4C4D4",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1 }}>{pinnedMsgs[pinnedMsgs.length-1]?.text}</span>
+                  </div>
+                )}
+                <div style={{ flex:1,overflowY:"auto",padding:"12px 16px 8px",display:"flex",flexDirection:"column",gap:4 }}>
+                  {filteredMessages.length===0&&!chatSearchQ && <div style={{ textAlign:"center",color:"#4B5563",marginTop:60,fontSize:14 }}><div style={{ fontSize:44,marginBottom:12 }}>👋</div>Say hello to {activeChat.name}!</div>}
+                  {chatSearchQ&&filteredMessages.length===0 && <div style={{ textAlign:"center",color:"#4B5563",marginTop:40,fontSize:14 }}>No messages found.</div>}
+                  {filteredMessages.map((msg,i)=>{
+                    const isMe=msg.from_id===me.id; const isLast=i===filteredMessages.length-1;
+                    const isEditing=editingMsg?.id===msg.id;
+                    const time=new Date(msg.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+                    const msgReactions=Array.isArray(msg.reactions)?msg.reactions:[];
+                    const isSwiping=swipeReply?.id===msg.id;
                     return (
-                      <div key={msg.id} className="msg-in" style={{ display:"flex",flexDirection:isMe?"row-reverse":"row",alignItems:"flex-end",gap:8,marginBottom:2 }}>
-                        {!isMe && <Avatar user={activeChat} size={28} />}
-                        <div style={{ maxWidth:"74%",display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start" }}>
+                      <div key={msg.id} className="msg-in"
+                        style={{ display:"flex",flexDirection:isMe?"row-reverse":"row",alignItems:"flex-end",gap:6,marginBottom:2,transform:isSwiping?`translateX(${swipeX}px)`:"none",transition:isSwiping?"none":"transform .2s ease" }}
+                        onTouchStart={e=>handleTouchStart(e,msg)} onTouchMove={handleTouchMove} onTouchEnd={()=>handleTouchEnd(msg)}>
+                        {!isMe && <Avatar user={activeChat} size={26} />}
+                        <div style={{ maxWidth:"75%",display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start" }}>
+                          {/* Reply preview */}
+                          {msg.reply_to_id && (
+                            <div style={{ background:"rgba(167,139,250,0.15)",borderLeft:"3px solid #A78BFA",borderRadius:"8px 8px 0 0",padding:"5px 10px",marginBottom:-4,fontSize:12,color:"#A78BFA",maxWidth:"100%" }}>
+                              <span style={{ fontWeight:700 }}>{msg.reply_from}</span>: {msg.reply_text}
+                            </div>
+                          )}
                           <div
-                            onContextMenu={e=>{e.preventDefault();setMsgMenu({msg,x:e.clientX,y:e.clientY});}}
-                            onTouchStart={()=>{longPressTimer.current=setTimeout(()=>setMsgMenu({msg,x:0,y:0}),500);}}
-                            onTouchEnd={()=>clearTimeout(longPressTimer.current)}
-                            onTouchMove={()=>clearTimeout(longPressTimer.current)}
-                            style={{ background:isMe?"linear-gradient(135deg, #A78BFA, #6366F1)":"#1E1E2A",color:"#fff",borderRadius:isMe?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:msg.type==="image"?4:"10px 14px",fontSize:14,lineHeight:1.55,cursor:"pointer",position:"relative" }}>
-                            {msg.type==="image" && (
-                              <img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)}
-                                style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block",cursor:"pointer" }} />
-                            )}
-                            {msg.type==="file" && (
+                            onContextMenu={e=>{e.preventDefault();setMsgMenu({msg});}}
+                            onTouchStart={e=>{swipeStartX.current=e.touches[0].clientX;longPressTimer.current=setTimeout(()=>setMsgMenu({msg}),500);}}
+                            onTouchMove={e=>{clearTimeout(longPressTimer.current);handleTouchMove(e);}}
+                            onTouchEnd={()=>{clearTimeout(longPressTimer.current);handleTouchEnd(msg);}}
+                            style={{ background:isMe?"linear-gradient(135deg,#A78BFA,#6366F1)":"#1E1E2A",color:"#fff",borderRadius:isMe?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:msg.type==="image"?4:"10px 14px",fontSize:14,lineHeight:1.55,cursor:"pointer" }}>
+                            {msg.type==="image"&&<img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)} style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block",cursor:"pointer" }} />}
+                            {msg.type==="file"&&(
                               <div style={{ display:"flex",alignItems:"center",gap:10 }}>
                                 <span style={{ fontSize:24 }}>📎</span>
                                 <div><div style={{ fontWeight:600,fontSize:13 }}>{msg.text}</div><div style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</div></div>
                               </div>
                             )}
-                            {msg.type==="text" && (isEditing ? (
+                            {msg.type==="text"&&(isEditing?(
                               <div onClick={e=>e.stopPropagation()}>
-                                <input value={editingMsg.text} onChange={e=>setEditingMsg(p=>({...p,text:e.target.value}))}
-                                  onKeyDown={e=>{if(e.key==="Enter")saveEditedMsg();if(e.key==="Escape")setEditingMsg(null);}}
-                                  autoFocus style={{ background:"rgba(255,255,255,0.15)",border:"none",borderRadius:8,padding:"4px 8px",color:"#fff",fontSize:14,width:"100%",outline:"none" }} />
+                                <input value={editingMsg.text} onChange={e=>setEditingMsg(p=>({...p,text:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")saveEditedMsg();if(e.key==="Escape")setEditingMsg(null);}} autoFocus style={{ background:"rgba(255,255,255,0.15)",border:"none",borderRadius:8,padding:"4px 8px",color:"#fff",fontSize:14,width:"100%",outline:"none" }} />
                                 <div style={{ display:"flex",gap:6,marginTop:6 }}>
                                   <button onClick={saveEditedMsg} style={{ background:"rgba(255,255,255,0.2)",color:"#fff",border:"none",borderRadius:8,padding:"3px 10px",fontSize:12,cursor:"pointer",fontWeight:700 }}>Save</button>
                                   <button onClick={()=>setEditingMsg(null)} style={{ background:"transparent",color:"rgba(255,255,255,0.6)",border:"none",fontSize:12,cursor:"pointer" }}>Cancel</button>
                                 </div>
                               </div>
-                            ) : msg.text)}
+                            ):msg.text)}
                           </div>
                           {/* Reactions */}
-                          {msgReactions.length > 0 && (
-                            <div style={{ display:"flex",gap:4,marginTop:4,flexWrap:"wrap" }}>
+                          {msgReactions.length>0&&(
+                            <div style={{ display:"flex",gap:3,marginTop:4,flexWrap:"wrap" }}>
                               {Object.entries(msgReactions.reduce((a,r)=>{a[r.emoji]=(a[r.emoji]||0)+1;return a;},{})).map(([emoji,count])=>(
-                                <span key={emoji} onClick={()=>toggleReaction(msg.id,emoji)} style={{ background:"#1E1E2A",border:"1px solid #2A2A38",borderRadius:20,padding:"2px 8px",fontSize:12,cursor:"pointer" }}>
-                                  {emoji} {count}
-                                </span>
+                                <span key={emoji} onClick={()=>toggleReaction(msg,emoji)} style={{ background:"#1E1E2A",border:"1px solid #2A2A38",borderRadius:20,padding:"2px 8px",fontSize:12,cursor:"pointer" }}>{emoji} {count}</span>
                               ))}
                             </div>
                           )}
-                          {/* React picker */}
-                          {showReactPicker===msg.id && (
-                            <div style={{ display:"flex",gap:6,background:"#1E1E2A",borderRadius:20,padding:"6px 10px",marginTop:4,border:"1px solid #2A2A38",animation:"popIn .15s ease" }}>
-                              {REACT_EMOJIS.map(e=>(
-                                <span key={e} onClick={()=>toggleReaction(msg.id,e)} style={{ fontSize:20,cursor:"pointer" }}>{e}</span>
-                              ))}
-                            </div>
-                          )}
-                          <div style={{ fontSize:10,color:"#4B5563",marginTop:4,display:"flex",alignItems:"center",gap:4 }}>
+                          <div style={{ fontSize:10,color:"#4B5563",marginTop:3,display:"flex",alignItems:"center",gap:4 }}>
                             {time}
-                            {msg.edited && <span style={{ color:"#6B7280",fontSize:10 }}>· edited</span>}
-                            {isMe && isLast && <span style={{ color:msg.seen?"#A78BFA":"#4B5563",fontWeight:700 }}>{msg.seen?" ✓✓":" ✓"}</span>}
+                            {msg.edited&&<span style={{ color:"#6B7280" }}>· edited</span>}
+                            {isMe&&isLast&&<span style={{ color:msg.seen?"#A78BFA":"#4B5563",fontWeight:700 }}>{msg.seen?" ✓✓":" ✓"}</span>}
                           </div>
                         </div>
+                        {isSwiping&&swipeX>20&&<span style={{ fontSize:20,opacity:swipeX/60 }}>↩️</span>}
                       </div>
                     );
                   })}
-                  {peerTyping && (
-                    <div style={{ display:"flex",alignItems:"flex-end",gap:8 }}>
-                      <Avatar user={activeChat} size={28} /><TypingBubble />
-                    </div>
-                  )}
+                  {peerTyping&&<div style={{ display:"flex",alignItems:"flex-end",gap:8 }}><Avatar user={activeChat} size={26} /><TypingBubble /></div>}
                   <div ref={chatEndRef} />
                 </div>
 
                 {/* Message context menu */}
-                {msgMenu && (
+                {msgMenu&&(
                   <div onClick={()=>setMsgMenu(null)} style={{ position:"fixed",inset:0,zIndex:100 }}>
-                    <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:100,left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:240,boxShadow:"0 8px 40px #00000088",border:"1px solid #2A2A38",zIndex:101 }}>
+                    <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:90,left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:250,boxShadow:"0 8px 40px #00000088",border:"1px solid #2A2A38",zIndex:101 }}>
                       {/* React row */}
                       <div style={{ display:"flex",justifyContent:"space-around",padding:"12px 16px",borderBottom:"1px solid #2A2A38" }}>
-                        {["❤️","😂","😮","😢","😡","👍"].map(e=>(
-                          <span key={e} onClick={()=>{toggleReaction(msgMenu.msg.id,e);setMsgMenu(null);}} style={{ fontSize:22,cursor:"pointer" }}>{e}</span>
-                        ))}
+                        {REACT_EMOJIS.map(e=><span key={e} onClick={()=>toggleReaction(msgMenu.msg,e)} style={{ fontSize:24,cursor:"pointer" }}>{e}</span>)}
                       </div>
-                      {msgMenu.msg.from_id===me.id && msgMenu.msg.type==="text" && (
-                        <button onClick={()=>{setEditingMsg({id:msgMenu.msg.id,text:msgMenu.msg.text});setMsgMenu(null);}} style={{ width:"100%",padding:"13px 20px",background:"none",color:"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}>
-                          ✏️ Edit message
+                      {[
+                        {label:"Reply",icon:"↩️",action:()=>{setReplyTo(msgMenu.msg);setMsgMenu(null);}},
+                        ...(msgMenu.msg.from_id===me.id&&msgMenu.msg.type==="text"?[{label:"Edit",icon:"✏️",action:()=>{setEditingMsg({id:msgMenu.msg.id,text:msgMenu.msg.text});setMsgMenu(null);}}]:[]),
+                        {label:"Copy",icon:"📋",action:()=>{navigator.clipboard?.writeText(msgMenu.msg.text||"");notify("Copied!");setMsgMenu(null);}},
+                        {label:"Forward",icon:"↪️",action:()=>forwardMessage(msgMenu.msg)},
+                        {label:pinnedMsgs.find(m=>m.id===msgMenu.msg.id)?"Unpin":"Pin",icon:"📌",action:()=>pinMessage(msgMenu.msg)},
+                        ...(msgMenu.msg.type==="image"?[{label:"View image",icon:"🔍",action:()=>{setLightbox(msgMenu.msg.data_url);setMsgMenu(null);}}]:[]),
+                        ...(msgMenu.msg.from_id===me.id?[{label:"Unsend",icon:"🗑️",action:()=>unsendMessage(msgMenu.msg.id),red:true}]:[{label:"Report",icon:"🚩",action:()=>{notify("Reported.","#F97316");setMsgMenu(null);},red:true}]),
+                      ].map((opt,i,arr)=>(
+                        <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"13px 20px",background:"none",color:opt.red?"#EF4444":"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #2A2A38":"none",display:"flex",alignItems:"center",gap:10,cursor:"pointer",border:"none" }}>
+                          <span style={{ fontSize:18 }}>{opt.icon}</span>{opt.label}
                         </button>
-                      )}
-                      {msgMenu.msg.type==="image" && (
-                        <button onClick={()=>{setLightbox(msgMenu.msg.data_url);setMsgMenu(null);}} style={{ width:"100%",padding:"13px 20px",background:"none",color:"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}>
-                          🔍 View full image
-                        </button>
-                      )}
-                      {msgMenu.msg.from_id===me.id && (
-                        <button onClick={()=>unsendMessage(msgMenu.msg.id)} style={{ width:"100%",padding:"13px 20px",background:"none",color:"#EF4444",fontSize:14,fontWeight:600,textAlign:"left",display:"flex",alignItems:"center",gap:10 }}>
-                          🗑️ Unsend message
-                        </button>
-                      )}
-                      {msgMenu.msg.from_id!==me.id && (
-                        <button onClick={()=>{notify("Message reported.",  "#F97316");setMsgMenu(null);}} style={{ width:"100%",padding:"13px 20px",background:"none",color:"#F97316",fontSize:14,fontWeight:600,textAlign:"left",display:"flex",alignItems:"center",gap:10 }}>
-                          🚩 Report message
-                        </button>
-                      )}
+                      ))}
                     </div>
                   </div>
                 )}
 
-                {showEmoji && (
+                {/* Emoji picker */}
+                {showEmoji&&(
                   <div style={{ background:"#141420",borderTop:"1px solid #1E1E2A",padding:"12px 16px",display:"flex",flexWrap:"wrap",gap:10 }}>
-                    {EMOJIS.map(e => (
-                      <span key={e} onClick={()=>setInput(p=>p+e)} style={{ fontSize:22,cursor:"pointer",transition:"transform .1s",display:"inline-block" }}
-                        onMouseOver={ev=>ev.target.style.transform="scale(1.3)"} onMouseOut={ev=>ev.target.style.transform="scale(1)"}>{e}</span>
-                    ))}
+                    {EMOJIS.map(e=><span key={e} onClick={()=>setInput(p=>p+e)} style={{ fontSize:22,cursor:"pointer" }}>{e}</span>)}
                   </div>
                 )}
-                <div style={{ padding:"10px 14px",borderTop:"1px solid #1A1A26",display:"flex",gap:8,alignItems:"center",background:"#0D0D12" }}>
+
+                {/* Reply preview bar */}
+                {replyTo&&(
+                  <div style={{ padding:"8px 16px",background:"#141420",borderTop:"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:10 }}>
+                    <div style={{ flex:1,borderLeft:"3px solid #A78BFA",paddingLeft:10 }}>
+                      <div style={{ fontSize:12,color:"#A78BFA",fontWeight:700 }}>Replying to {replyTo.from_id===me.id?"yourself":activeChat.name}</div>
+                      <div style={{ fontSize:13,color:"#9CA3AF",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{replyTo.type==="text"?replyTo.text:"📷 Photo"}</div>
+                    </div>
+                    <button onClick={()=>setReplyTo(null)} style={{ background:"none",color:"#4B5563",fontSize:18,border:"none" }}>✕</button>
+                  </div>
+                )}
+
+                {/* Input bar */}
+                <div style={{ padding:"10px 12px",borderTop:"1px solid #1A1A26",display:"flex",gap:6,alignItems:"center",background:"#0D0D12" }}>
                   <input type="file" ref={fileRef} onChange={sendFile} style={{ display:"none" }} accept="image/*,application/*" />
-                  <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",color:"#A78BFA",fontSize:17,flexShrink:0 }}>📎</button>
-                  <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0 }}>😊</button>
-                  <button onClick={()=>setShowBgPicker(true)} style={{ background:"#1A1A26",borderRadius:"50%",width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0 }}>🎨</button>
-                  <input value={input} onChange={e=>{setInput(e.target.value);signalTyping();}}
-                    onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage(input)}
-                    placeholder="Message..." style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"11px 16px",fontSize:14 }} />
-                  <button onClick={()=>sendMessage(input)} disabled={!input.trim()} className="ripple" style={{ background:input.trim()?"linear-gradient(135deg, #A78BFA, #6366F1)":"#1A1A26",borderRadius:"50%",width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#fff",flexShrink:0,transition:"background .2s" }}>↑</button>
+                  <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",color:"#A78BFA",fontSize:16,flexShrink:0 }}>📎</button>
+                  <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0 }}>😊</button>
+                  <input value={input} onChange={e=>{setInput(e.target.value);signalTyping();}} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage(input)} placeholder="Message..." style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"11px 16px",fontSize:14 }} />
+                  <button onClick={()=>sendMessage(input)} disabled={!input.trim()} className="ripple" style={{ background:input.trim()?"linear-gradient(135deg,#A78BFA,#6366F1)":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#fff",flexShrink:0 }}>↑</button>
                 </div>
               </div>
             )}
 
-            {/* FRIENDS */}
+            {/* ── FRIENDS ── */}
             {view==="friends" && (
               <div style={{ padding:"16px 20px" }}>
                 <div style={{ marginBottom:20 }}>
                   <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:8 }}>Find People</div>
                   <div style={{ display:"flex",gap:8 }}>
-                    <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doSearch()}
-                      placeholder="Search by username..." style={{ flex:1,background:"#1A1A26",borderRadius:14,padding:"12px 16px",fontSize:14,border:"1px solid #2A2A38" }} />
-                    <button className="ripple" onClick={doSearch} disabled={searching} style={{ background:"linear-gradient(135deg, #A78BFA, #6366F1)",color:"#fff",padding:"0 18px",borderRadius:14,fontWeight:700,fontSize:14,flexShrink:0 }}>
-                      {searching?"...":"Search"}
-                    </button>
+                    <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doSearch()} placeholder="Search by username..." style={{ flex:1,background:"#1A1A26",borderRadius:14,padding:"12px 16px",fontSize:14,border:"1px solid #2A2A38" }} />
+                    <button className="ripple" onClick={doSearch} disabled={searching} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"0 18px",borderRadius:14,fontWeight:700,fontSize:14,flexShrink:0 }}>{searching?"...":"Search"}</button>
                   </div>
                   <div style={{ fontSize:11,color:"#4B5563",marginTop:6 }}>💡 Your handle: <span style={{ color:"#A78BFA",fontWeight:700 }}>@{me.username}</span></div>
                 </div>
-                {searchResults.map(user => {
-                  const isFriend = friends.some(f=>f.id===user.id);
-                  const sent = sentReqs.includes(user.id);
+                {searchResults.map(user=>{
+                  const isFriend=friends.some(f=>f.id===user.id); const sent=sentReqs.includes(user.id);
                   return (
                     <div key={user.id} style={{ background:"#141420",borderRadius:16,padding:"14px 16px",display:"flex",alignItems:"center",gap:14,marginBottom:12,border:"1px solid #2A2A38" }}>
                       <Avatar user={{...user,online:isOnline(user)}} size={50} showStatus />
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontWeight:700,fontSize:14 }}>{user.name}</div>
-                        <div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div>
-                        <div style={{ fontSize:12,color:"#9CA3AF",marginTop:2 }}>{user.bio}</div>
-                      </div>
-                      {isFriend?<span style={{ color:"#4ADE80",fontSize:12,fontWeight:700 }}>✓ Friends</span>
-                        :sent?<span style={{ color:"#6B7280",fontSize:12,fontWeight:700 }}>Sent</span>
-                        :<button className="ripple" onClick={()=>sendFriendReq(user)} style={{ background:"linear-gradient(135deg, #A78BFA, #6366F1)",color:"#fff",padding:"8px 16px",borderRadius:20,fontSize:12,fontWeight:700 }}>+ Add</button>}
+                      <div style={{ flex:1 }}><div style={{ fontWeight:700,fontSize:14 }}>{user.name}</div><div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div><div style={{ fontSize:12,color:"#9CA3AF",marginTop:2 }}>{user.bio}</div></div>
+                      {isFriend?<span style={{ color:"#4ADE80",fontSize:12,fontWeight:700 }}>✓ Friends</span>:sent?<span style={{ color:"#6B7280",fontSize:12,fontWeight:700 }}>Sent</span>:<button className="ripple" onClick={()=>sendFriendReq(user)} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 16px",borderRadius:20,fontSize:12,fontWeight:700 }}>+ Add</button>}
                     </div>
                   );
                 })}
-                {requests.length > 0 && (
+                {requests.length>0&&(
                   <div style={{ marginBottom:20 }}>
                     <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:12 }}>Requests · {requests.length}</div>
-                    {requests.map(user => (
+                    {requests.map(user=>(
                       <div key={user.id} style={{ background:"#141420",borderRadius:16,padding:"14px 16px",display:"flex",alignItems:"center",gap:14,marginBottom:10,border:"1px solid #A78BFA33" }}>
                         <Avatar user={user} size={46} />
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontWeight:700,fontSize:14 }}>{user.name}</div>
-                          <div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div>
-                        </div>
+                        <div style={{ flex:1 }}><div style={{ fontWeight:700,fontSize:14 }}>{user.name}</div><div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div></div>
                         <div style={{ display:"flex",gap:8 }}>
-                          <button className="ripple" onClick={()=>acceptReq(user)} style={{ background:"linear-gradient(135deg, #A78BFA, #6366F1)",color:"#fff",padding:"8px 14px",borderRadius:20,fontSize:12,fontWeight:700 }}>Accept</button>
+                          <button className="ripple" onClick={()=>acceptReq(user)} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 14px",borderRadius:20,fontSize:12,fontWeight:700 }}>Accept</button>
                           <button className="ripple" onClick={()=>declineReq(user)} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"8px 12px",borderRadius:20,fontSize:12,fontWeight:600 }}>✕</button>
                         </div>
                       </div>
@@ -832,18 +800,13 @@ export default function App() {
                 )}
                 <div>
                   <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:12 }}>Friends · {friends.length}</div>
-                  {friends.length===0 && <div style={{ color:"#4B5563",textAlign:"center",padding:"30px 0",fontSize:14 }}>Search for friends above!</div>}
-                  {friends.map(user => {
-                    const online = isOnline(user);
+                  {friends.length===0&&<div style={{ color:"#4B5563",textAlign:"center",padding:"30px 0",fontSize:14 }}>Search for friends above!</div>}
+                  {friends.map(user=>{
+                    const online=isOnline(user);
                     return (
-                      <div key={user.id} className="chat-row" style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:10 }}
-                        onClick={()=>{setActiveChat(user);setView("chats");}}>
+                      <div key={user.id} className="chat-row" style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:10 }} onClick={()=>{setActiveChat(user);setView("chats");setChatView("messages");}}>
                         <Avatar user={{...user,online}} size={46} showStatus />
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontWeight:600,fontSize:14 }}>{user.name}</div>
-                          <div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div>
-                          <div style={{ fontSize:11,color:"#9CA3AF",marginTop:2 }}>{user.bio||"No bio yet"}</div>
-                        </div>
+                        <div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:14 }}>{user.name}</div><div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div><div style={{ fontSize:11,color:"#9CA3AF",marginTop:2 }}>{user.bio||"No bio yet"}</div></div>
                         <div style={{ fontSize:11,color:online?"#4ADE80":"#4B5563",fontWeight:600 }}>{online?"● Online":"Offline"}</div>
                       </div>
                     );
@@ -852,28 +815,24 @@ export default function App() {
               </div>
             )}
 
-            {/* PROFILE */}
+            {/* ── PROFILE ── */}
             {view==="profile" && (
               <div style={{ padding:"20px" }}>
-                <div style={{ background:`linear-gradient(135deg, ${me.color}22, #141420)`,borderRadius:20,padding:24,marginBottom:20,border:`1px solid ${me.color}33`,textAlign:"center" }}>
+                <div style={{ background:`linear-gradient(135deg,${me.color}22,#141420)`,borderRadius:20,padding:24,marginBottom:20,border:`1px solid ${me.color}33`,textAlign:"center" }}>
                   <Avatar user={me} size={80} ring />
-                  {editingProfile ? (
+                  {editingProfile?(
                     <div style={{ marginTop:16 }}>
-                      <input value={profileDraft.name??me.name} onChange={e=>setProfileDraft(p=>({...p,name:e.target.value}))}
-                        style={{ width:"100%",background:"#1A1A26",borderRadius:12,padding:"10px 14px",fontSize:16,fontWeight:700,textAlign:"center",marginBottom:8,border:"1px solid #2A2A38" }} />
-                      <input value={profileDraft.bio??me.bio} onChange={e=>setProfileDraft(p=>({...p,bio:e.target.value}))} placeholder="Write a bio..."
-                        style={{ width:"100%",background:"#1A1A26",borderRadius:12,padding:"10px 14px",fontSize:13,textAlign:"center",marginBottom:16,border:"1px solid #2A2A38" }} />
+                      <input value={profileDraft.name??me.name} onChange={e=>setProfileDraft(p=>({...p,name:e.target.value}))} style={{ width:"100%",background:"#1A1A26",borderRadius:12,padding:"10px 14px",fontSize:16,fontWeight:700,textAlign:"center",marginBottom:8,border:"1px solid #2A2A38" }} />
+                      <input value={profileDraft.bio??me.bio} onChange={e=>setProfileDraft(p=>({...p,bio:e.target.value}))} placeholder="Write a bio..." style={{ width:"100%",background:"#1A1A26",borderRadius:12,padding:"10px 14px",fontSize:13,textAlign:"center",marginBottom:16,border:"1px solid #2A2A38" }} />
                       <div style={{ display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",marginBottom:16 }}>
-                        {COLORS.map(c => (
-                          <div key={c} onClick={()=>setProfileDraft(p=>({...p,color:c}))} style={{ width:28,height:28,borderRadius:"50%",background:c,cursor:"pointer",border:(profileDraft.color??me.color)===c?"3px solid #fff":"3px solid transparent",boxShadow:(profileDraft.color??me.color)===c?`0 0 10px ${c}`:"none" }} />
-                        ))}
+                        {COLORS.map(c=><div key={c} onClick={()=>setProfileDraft(p=>({...p,color:c}))} style={{ width:28,height:28,borderRadius:"50%",background:c,cursor:"pointer",border:(profileDraft.color??me.color)===c?"3px solid #fff":"3px solid transparent",boxShadow:(profileDraft.color??me.color)===c?`0 0 10px ${c}`:"none" }} />)}
                       </div>
                       <div style={{ display:"flex",gap:10,justifyContent:"center" }}>
-                        <button className="ripple" onClick={saveProfile} style={{ background:"linear-gradient(135deg, #A78BFA, #6366F1)",color:"#fff",padding:"10px 24px",borderRadius:24,fontSize:13,fontWeight:800 }}>Save</button>
+                        <button className="ripple" onClick={saveProfile} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"10px 24px",borderRadius:24,fontSize:13,fontWeight:800 }}>Save</button>
                         <button className="ripple" onClick={()=>{setEditingProfile(false);setProfileDraft({});}} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"10px 20px",borderRadius:24,fontSize:13,fontWeight:600 }}>Cancel</button>
                       </div>
                     </div>
-                  ) : (
+                  ):(
                     <>
                       <div style={{ fontWeight:800,fontSize:20,marginTop:14 }}>{me.name}</div>
                       <div style={{ color:"#6B7280",fontSize:13,marginTop:2 }}>@{me.username}</div>
@@ -889,7 +848,7 @@ export default function App() {
                   )}
                 </div>
                 <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20 }}>
-                  {[{label:"Friends",value:friends.length,icon:"👥"},{label:"Requests",value:requests.length,icon:"📩"}].map(s => (
+                  {[{label:"Friends",value:friends.length,icon:"👥"},{label:"Requests",value:requests.length,icon:"📩"}].map(s=>(
                     <div key={s.label} style={{ background:"#141420",borderRadius:16,padding:"18px 16px",textAlign:"center",border:"1px solid #1E1E2A" }}>
                       <div style={{ fontSize:28 }}>{s.icon}</div>
                       <div style={{ fontWeight:800,fontSize:22,color:"#A78BFA",marginTop:4 }}>{s.value}</div>
@@ -899,71 +858,19 @@ export default function App() {
                 </div>
                 <div style={{ background:"#141420",borderRadius:16,padding:16,border:"1px solid #1E1E2A" }}>
                   <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:4 }}>Your handle</div>
-                  <div style={{ fontFamily:"'DM Mono', monospace",color:"#A78BFA",fontSize:18,fontWeight:700 }}>@{me.username}</div>
-                  <div style={{ fontSize:12,color:"#4B5563",marginTop:4 }}>Share this with friends so they can find and add you</div>
+                  <div style={{ fontFamily:"'DM Mono',monospace",color:"#A78BFA",fontSize:18,fontWeight:700 }}>@{me.username}</div>
+                  <div style={{ fontSize:12,color:"#4B5563",marginTop:4 }}>Share this with friends so they can find you</div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* ── PROFILE SHEET ── */}
-          {viewingProfile && (
-            <div onClick={()=>setViewingProfile(null)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:200,display:"flex",alignItems:"flex-end" }}>
-              <div onClick={e=>e.stopPropagation()} style={{ width:"100%",maxWidth:480,margin:"0 auto",background:"#0F0F1A",borderRadius:"24px 24px 0 0",padding:"0 0 32px",animation:"fadeUp .25s ease",border:"1px solid #1E1E2A" }}>
-                {/* Handle */}
-                <div style={{ width:40,height:4,background:"#2A2A38",borderRadius:4,margin:"12px auto 0" }} />
-                {/* Cover + Avatar */}
-                <div style={{ background:`linear-gradient(135deg, ${viewingProfile.color}44, #141420)`,padding:"24px 24px 16px",textAlign:"center" }}>
-                  <div style={{ position:"relative",display:"inline-block" }}>
-                    <div style={{ width:80,height:80,borderRadius:"50%",background:`linear-gradient(135deg, ${viewingProfile.color}cc, ${viewingProfile.color})`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Mono', monospace",fontWeight:700,fontSize:28,color:"#fff",margin:"0 auto",boxShadow:`0 0 0 3px #0F0F1A, 0 0 0 5px ${viewingProfile.color}` }}>
-                      {(viewingProfile.name||"?").slice(0,2).toUpperCase()}
-                    </div>
-                    <span style={{ position:"absolute",bottom:2,right:2,width:16,height:16,borderRadius:"50%",background:isOnline(viewingProfile)?"#4ADE80":"#4B5563",border:"2px solid #0F0F1A" }} />
-                  </div>
-                  <div style={{ fontWeight:800,fontSize:20,marginTop:12,color:"#E2E8F0" }}>{viewingProfile.name}</div>
-                  <div style={{ color:"#6B7280",fontSize:13,marginTop:2 }}>@{viewingProfile.username}</div>
-                  <div style={{ color:"#9CA3AF",fontSize:13,marginTop:8,lineHeight:1.5 }}>{viewingProfile.bio}</div>
-                  <div style={{ fontSize:12,color:isOnline(viewingProfile)?"#4ADE80":"#6B7280",marginTop:8,fontWeight:600 }}>
-                    {isOnline(viewingProfile)?"● Active now":"● Offline"}
-                  </div>
-                </div>
-                {/* Action buttons */}
-                <div style={{ display:"flex",gap:10,padding:"0 20px 4px" }}>
-                  <button onClick={()=>{setViewingProfile(null);setActiveChat(viewingProfile);setView("chats");}} style={{ flex:1,padding:"11px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",borderRadius:16,fontWeight:700,fontSize:13,border:"none",cursor:"pointer" }}>
-                    💬 Message
-                  </button>
-                  <button onClick={()=>restrictUser(viewingProfile)} style={{ flex:1,padding:"11px",background:restrictedUsers.includes(viewingProfile.id)?"#2A1F44":"#1A1A26",color:restrictedUsers.includes(viewingProfile.id)?"#A78BFA":"#9CA3AF",borderRadius:16,fontWeight:700,fontSize:13,border:"1px solid #2A2A38",cursor:"pointer" }}>
-                    {restrictedUsers.includes(viewingProfile.id)?"✓ Restricted":"🔇 Restrict"}
-                  </button>
-                </div>
-                {/* Options list */}
-                <div style={{ margin:"12px 20px 0",background:"#141420",borderRadius:16,overflow:"hidden",border:"1px solid #1E1E2A" }}>
-                  {[
-                    { label:"View full profile", icon:"👤", action:()=>setFullProfileUser(viewingProfile), color:"#E2E8F0" },
-                    { label:mutedUsers.includes(viewingProfile.id)?"Unmute notifications":"Mute notifications", icon:mutedUsers.includes(viewingProfile.id)?"🔔":"🔕", action:()=>muteUser(viewingProfile), color:"#E2E8F0" },
-                    { label:"Copy username", icon:"📋", action:()=>{navigator.clipboard?.writeText(`@${viewingProfile.username}`);notify("Username copied!");}, color:"#E2E8F0" },
-                    { label:"Remove friend", icon:"👋", action:()=>removeFriend(viewingProfile), color:"#F97316" },
-                    { label:"Block", icon:"🚫", action:()=>blockUser(viewingProfile), color:"#EF4444" },
-                    { label:"Report", icon:"🚩", action:()=>{notify("Reported.",  "#F97316");setViewingProfile(null);}, color:"#EF4444" },
-                  ].map((opt,i,arr)=>(
-                    <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"14px 18px",background:"none",color:opt.color,fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #1E1E2A":"none",display:"flex",alignItems:"center",gap:12,cursor:"pointer" }}>
-                      <span style={{ fontSize:18 }}>{opt.icon}</span>{opt.label}
-                    </button>
-                  ))}
-                </div>
-                {/* Cancel */}
-                <button onClick={()=>setViewingProfile(null)} style={{ width:"calc(100% - 40px)",margin:"12px 20px 0",padding:14,background:"#1A1A26",color:"#9CA3AF",borderRadius:16,fontSize:14,fontWeight:700,border:"1px solid #2A2A38",cursor:"pointer" }}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-
-          {!(view==="chats" && activeChat) && (
+          {/* Bottom Nav */}
+          {!(view==="chats"&&activeChat) && (
             <div style={{ position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0D0D12",borderTop:"1px solid #1A1A26",display:"flex",justifyContent:"space-around",padding:"10px 0 16px",zIndex:10 }}>
-              {[{id:"chats",icon:"💬",label:"Chats"},{id:"friends",icon:"👥",label:"Friends",badge:requests.length},{id:"profile",icon:"👤",label:"Profile"}].map(tab => (
+              {[{id:"chats",icon:"💬",label:"Chats"},{id:"friends",icon:"👥",label:"Friends",badge:requests.length},{id:"profile",icon:"👤",label:"Profile"}].map(tab=>(
                 <button key={tab.id} className="tab-btn" onClick={()=>setView(tab.id)} style={{ background:"none",display:"flex",flexDirection:"column",alignItems:"center",gap:4,color:view===tab.id?"#A78BFA":"#4B5563",padding:"6px 24px",borderRadius:16,transition:"all .15s",position:"relative" }}>
-                  {tab.badge>0 && <span style={{ position:"absolute",top:0,right:10,background:"#EF4444",color:"#fff",borderRadius:20,fontSize:9,fontWeight:700,padding:"1px 5px" }}>{tab.badge}</span>}
+                  {tab.badge>0&&<span style={{ position:"absolute",top:0,right:10,background:"#EF4444",color:"#fff",borderRadius:20,fontSize:9,fontWeight:700,padding:"1px 5px" }}>{tab.badge}</span>}
                   <span style={{ fontSize:21 }}>{tab.icon}</span>
                   <span style={{ fontSize:10,fontWeight:700,letterSpacing:.5 }}>{tab.label}</span>
                 </button>

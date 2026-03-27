@@ -64,6 +64,9 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileDraft, setProfileDraft] = useState({});
+  const [msgMenu, setMsgMenu] = useState(null);
+  const [editingMsg, setEditingMsg] = useState(null);
+  const [lightbox, setLightbox] = useState(null);
 
   const fileRef = useRef();
   const chatEndRef = useRef();
@@ -248,6 +251,21 @@ export default function App() {
     reader.readAsDataURL(file); e.target.value = "";
   };
 
+  const unsendMessage = async (msgId) => {
+    await supabase.from("messages").delete().eq("id", msgId).eq("from_id", me.id);
+    setMessages(p => p.filter(m => m.id !== msgId));
+    setMsgMenu(null);
+    notify("Message unsent.");
+  };
+
+  const saveEditedMsg = async () => {
+    if (!editingMsg?.text?.trim()) return;
+    await supabase.from("messages").update({ text: editingMsg.text }).eq("id", editingMsg.id).eq("from_id", me.id);
+    setMessages(p => p.map(m => m.id === editingMsg.id ? { ...m, text: editingMsg.text } : m));
+    setEditingMsg(null);
+    notify("Message edited.");
+  };
+
   const sendFriendReq = async (user) => {
     const { error } = await supabase.from("friend_requests").insert({ from_id: me.id, to_id: user.id });
     if (error) { notify("Could not send request.", "#EF4444"); return; }
@@ -311,6 +329,21 @@ export default function App() {
       {toast && (
         <div style={{ position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:toast.color,color:"#fff",padding:"10px 22px",borderRadius:28,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:`0 4px 24px ${toast.color}66`,animation:"popIn .2s ease",whiteSpace:"nowrap" }}>
           {toast.msg}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div onClick={()=>setLightbox(null)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:9998,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20 }}>
+          <img src={lightbox} alt="" style={{ maxWidth:"100%",maxHeight:"80vh",borderRadius:12,objectFit:"contain" }} />
+          <div style={{ display:"flex",gap:16,marginTop:24 }}>
+            <a href={lightbox} download="pulse-image.jpg" onClick={e=>e.stopPropagation()} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"12px 28px",borderRadius:24,fontSize:14,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:8 }}>
+              ⬇️ Download
+            </a>
+            <button onClick={()=>setLightbox(null)} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"12px 24px",borderRadius:24,fontSize:14,fontWeight:600,border:"1px solid #2A2A38" }}>
+              Close
+            </button>
+          </div>
         </div>
       )}
 
@@ -449,8 +482,8 @@ export default function App() {
 
             {/* CHAT WINDOW */}
             {view==="chats" && activeChat && (
-              <div style={{ display:"flex",flexDirection:"column",height:"calc(100vh - 120px)" }}>
-                <div style={{ flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:8 }}>
+              <div style={{ display:"flex",flexDirection:"column",height:"calc(100vh - 62px)" }} onClick={()=>setMsgMenu(null)}>
+                <div style={{ flex:1,overflowY:"auto",padding:"16px 20px 8px",display:"flex",flexDirection:"column",gap:8 }}>
                   {messages.length===0 && (
                     <div style={{ textAlign:"center",color:"#4B5563",marginTop:60,fontSize:14 }}>
                       <div style={{ fontSize:44,marginBottom:12 }}>👋</div>Say hello to {activeChat.name}!
@@ -460,19 +493,36 @@ export default function App() {
                     const isMe = msg.from_id===me.id;
                     const isLast = i===messages.length-1;
                     const time = new Date(msg.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+                    const isEditing = editingMsg?.id === msg.id;
                     return (
                       <div key={msg.id} className="msg-in" style={{ display:"flex",flexDirection:isMe?"row-reverse":"row",alignItems:"flex-end",gap:8 }}>
                         {!isMe && <Avatar user={activeChat} size={28} />}
                         <div style={{ maxWidth:"74%",display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start" }}>
-                          <div style={{ background:isMe?"linear-gradient(135deg, #A78BFA, #6366F1)":"#1E1E2A",color:"#fff",borderRadius:isMe?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:msg.type==="image"?4:"10px 14px",fontSize:14,lineHeight:1.55 }}>
-                            {msg.type==="image" && <img src={msg.data_url} alt="" style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block" }} />}
+                          <div
+                            onContextMenu={e=>{e.preventDefault();if(isMe)setMsgMenu({msg,x:e.clientX,y:e.clientY});}}
+                            onTouchStart={isMe?(()=>{const t=setTimeout(()=>setMsgMenu({msg,x:0,y:0}),500);return()=>clearTimeout(t)})()):undefined}
+                            style={{ background:isMe?"linear-gradient(135deg, #A78BFA, #6366F1)":"#1E1E2A",color:"#fff",borderRadius:isMe?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:msg.type==="image"?4:"10px 14px",fontSize:14,lineHeight:1.55,cursor:isMe?"pointer":"default" }}>
+                            {msg.type==="image" && (
+                              <img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)}
+                                style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block",cursor:"pointer" }} />
+                            )}
                             {msg.type==="file" && (
                               <div style={{ display:"flex",alignItems:"center",gap:10 }}>
                                 <span style={{ fontSize:24 }}>📎</span>
                                 <div><div style={{ fontWeight:600,fontSize:13 }}>{msg.text}</div><div style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</div></div>
                               </div>
                             )}
-                            {msg.type==="text" && msg.text}
+                            {msg.type==="text" && (isEditing ? (
+                              <div onClick={e=>e.stopPropagation()}>
+                                <input value={editingMsg.text} onChange={e=>setEditingMsg(p=>({...p,text:e.target.value}))}
+                                  onKeyDown={e=>{if(e.key==="Enter")saveEditedMsg();if(e.key==="Escape")setEditingMsg(null);}}
+                                  autoFocus style={{ background:"rgba(255,255,255,0.15)",border:"none",borderRadius:8,padding:"4px 8px",color:"#fff",fontSize:14,width:"100%",outline:"none" }} />
+                                <div style={{ display:"flex",gap:6,marginTop:6 }}>
+                                  <button onClick={saveEditedMsg} style={{ background:"rgba(255,255,255,0.2)",color:"#fff",border:"none",borderRadius:8,padding:"3px 10px",fontSize:12,cursor:"pointer",fontWeight:700 }}>Save</button>
+                                  <button onClick={()=>setEditingMsg(null)} style={{ background:"transparent",color:"rgba(255,255,255,0.6)",border:"none",fontSize:12,cursor:"pointer" }}>Cancel</button>
+                                </div>
+                              </div>
+                            ) : msg.text)}
                           </div>
                           <div style={{ fontSize:10,color:"#4B5563",marginTop:4,display:"flex",alignItems:"center",gap:4 }}>
                             {time}
@@ -489,6 +539,28 @@ export default function App() {
                   )}
                   <div ref={chatEndRef} />
                 </div>
+
+                {/* Message context menu */}
+                {msgMenu && (
+                  <div onClick={()=>setMsgMenu(null)} style={{ position:"fixed",inset:0,zIndex:100 }}>
+                    <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:100,left:"50%",transform:"translateX(-50%)",background:"#1E1E2A",borderRadius:18,overflow:"hidden",width:220,boxShadow:"0 8px 32px #00000066",border:"1px solid #2A2A38",zIndex:101 }}>
+                      {msgMenu.msg.type==="text" && (
+                        <button onClick={()=>{setEditingMsg({id:msgMenu.msg.id,text:msgMenu.msg.text});setMsgMenu(null);}} style={{ width:"100%",padding:"14px 20px",background:"none",color:"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}>
+                          ✏️ Edit message
+                        </button>
+                      )}
+                      {msgMenu.msg.type==="image" && (
+                        <button onClick={()=>{setLightbox(msgMenu.msg.data_url);setMsgMenu(null);}} style={{ width:"100%",padding:"14px 20px",background:"none",color:"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}>
+                          🔍 View full image
+                        </button>
+                      )}
+                      <button onClick={()=>unsendMessage(msgMenu.msg.id)} style={{ width:"100%",padding:"14px 20px",background:"none",color:"#EF4444",fontSize:14,fontWeight:600,textAlign:"left",display:"flex",alignItems:"center",gap:10 }}>
+                        🗑️ Unsend message
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {showEmoji && (
                   <div style={{ background:"#141420",borderTop:"1px solid #1E1E2A",padding:"12px 16px",display:"flex",flexWrap:"wrap",gap:10 }}>
                     {EMOJIS.map(e => (

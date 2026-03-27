@@ -97,7 +97,7 @@ export default function App() {
     const { data: existing } = await supabase.from("profiles")
       .select("username").eq("username", username.toLowerCase().trim()).maybeSingle();
     if (existing) { setAuthErr("Username taken."); setLoading(false); return; }
-    const fakeEmail = `${username.toLowerCase().trim()}@pulse.internal`;
+    const fakeEmail = `${username.toLowerCase().trim()}@pulsesocial.app`;
     const { data, error } = await supabase.auth.signUp({ email: fakeEmail, password });
     if (error) { setAuthErr(error.message); setLoading(false); return; }
     const profile = {
@@ -116,7 +116,7 @@ export default function App() {
     const { username, password } = authForm;
     if (!username || !password) { setAuthErr("Fill in all fields."); return; }
     setLoading(true); setAuthErr("");
-    const fakeEmail = `${username.toLowerCase().trim()}@pulse.internal`;
+    const fakeEmail = `${username.toLowerCase().trim()}@pulsesocial.app`;
     const { data, error } = await supabase.auth.signInWithPassword({ email: fakeEmail, password });
     if (error) { setAuthErr("Wrong username or password."); setLoading(false); return; }
     const { data: profile } = await supabase.from("profiles").select("*").eq("id", data.user.id).single();

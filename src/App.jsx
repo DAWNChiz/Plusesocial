@@ -16,11 +16,6 @@ const CHAT_BGS = [
 ];
 
 // ── SVG Icons ─────────────────────────────────────────────────────────────
-const Icon = ({ d, size=22, color="currentColor", fill="none", strokeWidth=1.8 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
-  </svg>
-);
 const IcBack = ({size=22,color="#A78BFA"}) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <path d="M19 12H5M12 5l-7 7 7 7"/>
@@ -33,14 +28,12 @@ const IcAttach = ({size=22,color="#A78BFA"}) => (
 );
 const IcEmoji = ({size=22,color="#9CA3AF"}) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/>
-    <path d="M8 13s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>
+    <circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>
   </svg>
 );
 const IcSend = ({size=20,color="#fff"}) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <line x1="22" y1="2" x2="11" y2="13"/>
-    <polygon points="22 2 15 22 11 13 2 9 22 2" fill={color} stroke={color}/>
+    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill={color} stroke={color}/>
   </svg>
 );
 const IcReply = ({size=20,color="#E2E8F0"}) => (
@@ -83,11 +76,6 @@ const IcImage = ({size=20,color="#E2E8F0"}) => (
     <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
   </svg>
 );
-const IcSearch = ({size=18,color="#A78BFA"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-  </svg>
-);
 const IcClose = ({size=18,color="#6B7280"}) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round">
     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -98,18 +86,11 @@ const IcCamera = ({size=16,color="#fff"}) => (
     <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
   </svg>
 );
-const IcMore = ({size=20,color="#E2E8F0"}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
-    <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-  </svg>
-);
 const IcSwipeReply = ({size=18,color="#A78BFA"}) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/>
   </svg>
 );
-
-// ── Chat info action icons (SVG) ───────────────────────────────────────────
 const IcMessage = ({size=22,color="#E2E8F0"}) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
@@ -138,6 +119,111 @@ const IcDotsHoriz = ({size=22,color="#E2E8F0"}) => (
     <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
   </svg>
 );
+const IcDownload = ({size=20,color="#fff"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+);
+const IcBlock = ({size=22,color="#EF4444"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+  </svg>
+);
+const IcUserRemove = ({size=22,color="#F97316"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="11" x2="23" y2="11"/>
+  </svg>
+);
+const IcRestrict = ({size=22,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+);
+const IcFlag = ({size=22,color="#EF4444"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
+  </svg>
+);
+const IcBell = ({size=22,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
+  </svg>
+);
+const IcBellOff = ({size=22,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13.73 21a2 2 0 01-3.46 0M18.63 13A17.89 17.89 0 0118 8M6.26 6.26A5.86 5.86 0 006 8c0 7-3 9-3 9h14"/>
+    <path d="M18 8a6 6 0 00-9.33-5"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+);
+const IcPalette = ({size=22,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/>
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+  </svg>
+);
+const IcPushPin = ({size=22,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="17" x2="12" y2="22"/>
+    <path d="M5 17h14v-1.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V6h1a2 2 0 000-4H8a2 2 0 000 4h1v4.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V17z"/>
+  </svg>
+);
+const IcMedia = ({size=22,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+    <polyline points="21 15 16 10 5 21"/>
+  </svg>
+);
+const IcNickname = ({size=22,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+    <line x1="17" y1="11" x2="22" y2="11"/><line x1="19.5" y1="8.5" x2="19.5" y2="13.5"/>
+  </svg>
+);
+const IcChevronRight = ({size=16,color="#4B5563"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6"/>
+  </svg>
+);
+const IcChat = ({size=22,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+  </svg>
+);
+const IcFriends = ({size=22,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+  </svg>
+);
+const IcUser = ({size=22,color="#E2E8F0"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </svg>
+);
+const IcCheck = ({size=16,color="#A78BFA"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+const IcDoubleCheck = ({size=16,color="#A78BFA"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="17 1 11 7 8 4"/><polyline points="23 7 11 13 7 9"/>
+  </svg>
+);
+const IcFile = ({size=24,color="#A78BFA"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+  </svg>
+);
+const IcPlusCircle = ({size=22,color="#A78BFA"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+  </svg>
+);
 
 // ── Avatar ─────────────────────────────────────────────────────────────────
 const Avatar = ({ user, size=42, ring=false, showStatus=false, onClick }) => (
@@ -159,22 +245,14 @@ const TypingBubble = () => (
   </div>
 );
 
-// ── Last seen helper ───────────────────────────────────────────────────────
 const getLastSeen = (user) => {
   if (!user?.last_seen) return "Offline";
   const diff = Math.floor((Date.now() - new Date(user.last_seen).getTime()) / 1000);
   if (diff < 20)  return "Active now";
   if (diff < 60)  return `Active ${diff}s ago`;
-  if (diff < 3600) {
-    const m = Math.floor(diff / 60);
-    return `Active ${m} min ago`;
-  }
-  if (diff < 86400) {
-    const h = Math.floor(diff / 3600);
-    return `Active ${h}h ago`;
-  }
-  const d = Math.floor(diff / 86400);
-  return `Active ${d}d ago`;
+  if (diff < 3600) return `Active ${Math.floor(diff/60)} min ago`;
+  if (diff < 86400) return `Active ${Math.floor(diff/3600)}h ago`;
+  return `Active ${Math.floor(diff/86400)}d ago`;
 };
 
 export default function App() {
@@ -218,7 +296,6 @@ export default function App() {
   const [nickname, setNickname] = useState("");
   const [editNickname, setEditNickname] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  // Force re-render every minute so last-seen timestamps stay fresh
   const [, setTick] = useState(0);
 
   const fileRef = useRef();
@@ -234,13 +311,11 @@ export default function App() {
   const currentBg = CHAT_BGS.find(b=>b.id===chatBg)?.bg || "#0D0D12";
   const notify = (msg, color="#A78BFA") => { setToast({msg,color}); setTimeout(()=>setToast(null),2800); };
 
-  // Tick every 30 s so last-seen labels update without a full reload
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 30000);
+    const id = setInterval(() => setTick(t=>t+1), 30000);
     return () => clearInterval(id);
   }, []);
 
-  // ── Session restore ───────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(async ({data:{session}}) => {
       if (session?.user) {
@@ -250,7 +325,6 @@ export default function App() {
     });
   }, []);
 
-  // ── Auth ─────────────────────────────────────────────────────────────────
   const doSignup = async () => {
     const {username,password,name,color} = authForm;
     if (!username.trim()||!password||!name.trim()) { setAuthErr("All fields required."); return; }
@@ -262,11 +336,11 @@ export default function App() {
     const email = `${username.toLowerCase().trim()}@pulsesocial.app`;
     const {data,error} = await supabase.auth.signUp({email,password});
     if (error) { setAuthErr(error.message); setLoading(false); return; }
-    const profile = { id:data.user.id, username:username.toLowerCase().trim(), name:name.trim(), bio:"Hey, I'm on Pulse! 👋", color, online:true, last_seen:new Date().toISOString(), photo_url:null };
+    const profile = { id:data.user.id, username:username.toLowerCase().trim(), name:name.trim(), bio:"Hey, I'm on Pulse!", color, online:true, last_seen:new Date().toISOString(), photo_url:null };
     const {error:pe} = await supabase.from("profiles").insert(profile);
     if (pe) { setAuthErr(pe.message); setLoading(false); return; }
     setMe(profile); setScreen("home"); setLoading(false);
-    notify("Welcome to Pulse! 🎉"); startHeartbeat(profile.id);
+    notify("Welcome to Pulse!"); startHeartbeat(profile.id);
   };
 
   const doLogin = async () => {
@@ -280,7 +354,7 @@ export default function App() {
     if (!p) { setAuthErr("Profile not found."); setLoading(false); return; }
     await supabase.from("profiles").update({online:true,last_seen:new Date().toISOString()}).eq("id",p.id);
     setMe({...p,online:true}); setScreen("home"); setLoading(false);
-    notify(`Welcome back, ${p.name}! 👋`); startHeartbeat(p.id);
+    notify(`Welcome back, ${p.name}!`); startHeartbeat(p.id);
   };
 
   const doLogout = async () => {
@@ -300,7 +374,6 @@ export default function App() {
     },10000);
   };
 
-  // ── Profile photo upload ──────────────────────────────────────────────────
   const handleProfilePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file||!me) return;
@@ -312,14 +385,12 @@ export default function App() {
       const photo_url = ev.target.result;
       const {error} = await supabase.from("profiles").update({photo_url}).eq("id",me.id);
       if (error) notify("Failed to upload photo.","#EF4444");
-      else { setMe(p=>({...p,photo_url})); notify("Profile photo updated! 📸"); }
+      else { setMe(p=>({...p,photo_url})); notify("Profile photo updated!"); }
       setUploadingPhoto(false);
     };
-    reader.readAsDataURL(file);
-    e.target.value="";
+    reader.readAsDataURL(file); e.target.value="";
   };
 
-  // ── Social ────────────────────────────────────────────────────────────────
   const loadSocial = useCallback(async () => {
     if (!me) return;
     const {data:fs} = await supabase.from("friendships").select("user_a,user_b").or(`user_a.eq.${me.id},user_b.eq.${me.id}`);
@@ -349,7 +420,6 @@ export default function App() {
     load(); const id=setInterval(load,5000); return ()=>clearInterval(id);
   }, [me,friends]);
 
-  // ── Messages ──────────────────────────────────────────────────────────────
   const loadMessages = useCallback(async () => {
     if (!me||!activeChat) return;
     const {data} = await supabase.from("messages").select("*")
@@ -393,7 +463,7 @@ export default function App() {
   const sendMessage = async (text, type="text", extra={}) => {
     if ((!text?.trim()&&type==="text")||!activeChat) return;
     const msg = { from_id:me.id, to_id:activeChat.id, text:type==="text"?text.trim():text, type, seen:false, reactions:[], ...extra };
-    if (replyTo) { msg.reply_to_id=replyTo.id; msg.reply_text=replyTo.type==="text"?replyTo.text:"📷 Photo"; msg.reply_from=replyTo.from_id===me.id?"You":activeChat.name; }
+    if (replyTo) { msg.reply_to_id=replyTo.id; msg.reply_text=replyTo.type==="text"?replyTo.text:"Photo"; msg.reply_from=replyTo.from_id===me.id?"You":activeChat.name; }
     const {data,error} = await supabase.from("messages").insert(msg).select().single();
     if (!error&&data) setMessages(p=>[...p,data]);
     setInput(""); setShowEmoji(false); setReplyTo(null);
@@ -406,24 +476,23 @@ export default function App() {
     const reader=new FileReader();
     reader.onload=async(ev)=>{
       await sendMessage(file.name,isImage?"image":"file",{data_url:ev.target.result,file_size:(file.size/1024).toFixed(1)+" KB"});
-      notify(isImage?"Photo sent 📷":"File sent 📎");
+      notify(isImage?"Photo sent":"File sent");
     };
     reader.readAsDataURL(file); e.target.value="";
   };
 
+  // ── FIXED unsend: remove from state first, then DB, no re-fetch on success ──
   const unsendMessage = async (msgId) => {
     setMessages(p=>p.filter(m=>m.id!==msgId));
     setMsgMenu(null);
-    const {error} = await supabase.from("messages").delete().eq("id",msgId).eq("from_id",me.id);
-    if (error) { notify("Could not unsend.","#EF4444"); loadMessages(); }
-    else notify("Message unsent.");
+    await supabase.from("messages").delete().eq("id",msgId).eq("from_id",me.id);
   };
 
   const saveEditedMsg = async () => {
     if (!editingMsg?.text?.trim()) return;
     await supabase.from("messages").update({text:editingMsg.text,edited:true}).eq("id",editingMsg.id).eq("from_id",me.id);
     setMessages(p=>p.map(m=>m.id===editingMsg.id?{...m,text:editingMsg.text,edited:true}:m));
-    setEditingMsg(null); notify("Message edited.");
+    setEditingMsg(null);
   };
 
   const toggleReaction = async (msg, emoji) => {
@@ -435,32 +504,33 @@ export default function App() {
     setMsgMenu(null);
   };
 
-  const pinMessage = async (msg) => {
-    setPinnedMsgs(p=>p.find(m=>m.id===msg.id)?p.filter(m=>m.id!==msg.id):[...p,msg]);
-    setMsgMenu(null); notify(pinnedMsgs.find(m=>m.id===msg.id)?"Unpinned.":"Message pinned 📌");
+  const pinMessage = (msg) => {
+    const alreadyPinned = pinnedMsgs.find(m=>m.id===msg.id);
+    setPinnedMsgs(p=>alreadyPinned?p.filter(m=>m.id!==msg.id):[...p,msg]);
+    setMsgMenu(null);
+    notify(alreadyPinned?"Unpinned.":"Message pinned");
   };
 
   const forwardMessage = (msg) => {
     setMsgMenu(null);
-    setInput(msg.type==="text"?msg.text:""); notify("Message copied to input — edit & send!");
+    setInput(msg.type==="text"?msg.text:"");
   };
 
-  // ── Friend actions ────────────────────────────────────────────────────────
   const sendFriendReq = async (user) => {
     const {error} = await supabase.from("friend_requests").insert({from_id:me.id,to_id:user.id});
     if (error) { notify("Could not send request.","#EF4444"); return; }
-    setSentReqs(p=>[...p,user.id]); notify(`Friend request sent to ${user.name}!`);
+    setSentReqs(p=>[...p,user.id]); notify(`Request sent to ${user.name}!`);
   };
   const acceptReq = async (user) => {
     const [a,b]=[me.id,user.id].sort();
     await supabase.from("friendships").insert({user_a:a,user_b:b});
     await supabase.from("friend_requests").delete().eq("from_id",user.id).eq("to_id",me.id);
     setRequests(p=>p.filter(u=>u.id!==user.id)); setFriends(p=>[...p,user]);
-    notify(`${user.name} is now your friend! 🎉`);
+    notify(`${user.name} is now your friend!`);
   };
   const declineReq = async (user) => {
     await supabase.from("friend_requests").delete().eq("from_id",user.id).eq("to_id",me.id);
-    setRequests(p=>p.filter(u=>u.id!==user.id)); notify("Request declined.");
+    setRequests(p=>p.filter(u=>u.id!==user.id));
   };
   const doSearch = async () => {
     if (!searchQ.trim()) { setSearchResults([]); return; }
@@ -472,7 +542,7 @@ export default function App() {
   const saveProfile = async () => {
     const updated={...me,...profileDraft};
     await supabase.from("profiles").update({name:updated.name,bio:updated.bio,color:updated.color}).eq("id",me.id);
-    setMe(updated); setEditingProfile(false); setProfileDraft({}); notify("Profile updated! ✨");
+    setMe(updated); setEditingProfile(false); setProfileDraft({});
   };
   const blockUser = (user) => { setBlockedUsers(p=>[...p,user.id]); setFullProfileUser(null); setActiveChat(null); setMessages([]); notify(`${user.name} blocked.`,"#EF4444"); };
   const restrictUser = (user) => { setRestrictedUsers(p=>p.includes(user.id)?p.filter(id=>id!==user.id):[...p,user.id]); notify(restrictedUsers.includes(user.id)?`${user.name} unrestricted.`:`${user.name} restricted.`); };
@@ -484,16 +554,12 @@ export default function App() {
   };
   const isOnline = (user) => user?.online && Date.now()-new Date(user.last_seen).getTime()<20000;
 
-  // ── Swipe to reply ────────────────────────────────────────────────────────
   const handleTouchStart = (e, msg) => { swipeStartX.current=e.touches[0].clientX; setSwipeReply(msg); };
   const handleTouchMove = (e) => { const dx=e.touches[0].clientX-swipeStartX.current; if(dx>0&&dx<80) setSwipeX(dx); };
-  const handleTouchEnd = (msg) => {
-    if (swipeX>50) setReplyTo(msg);
-    setSwipeX(0); setSwipeReply(null);
-  };
+  const handleTouchEnd = (msg) => { if (swipeX>50) setReplyTo(msg); setSwipeX(0); setSwipeReply(null); };
 
   const css = `
-    @import url('[fonts.googleapis.com](https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap)');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap');
     *{box-sizing:border-box;margin:0;padding:0}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2A2A38;border-radius:10px}
     input,textarea{outline:none;border:none;background:none;font-family:inherit;color:inherit}
@@ -507,24 +573,29 @@ export default function App() {
     .msg-in{animation:popIn .2s ease}.screen-enter{animation:fadeUp .3s ease}
     .tab-btn:hover{background:#1A1A26!important}.chat-row:hover{background:#151520!important}
     input::placeholder{color:#4B5563}
-    /* ── suppress long-press highlight on message bubbles ── */
-    .msg-bubble{
-      -webkit-user-select:none;
-      user-select:none;
-      -webkit-touch-callout:none;
-      -webkit-tap-highlight-color:transparent;
-    }
+    .msg-bubble{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
   `;
 
-  const filteredMessages = chatSearchQ
-    ? messages.filter(m=>m.type==="text"&&m.text.toLowerCase().includes(chatSearchQ.toLowerCase()))
-    : messages;
+  const filteredMessages = chatSearchQ ? messages.filter(m=>m.type==="text"&&m.text.toLowerCase().includes(chatSearchQ.toLowerCase())) : messages;
+
+  // ── InfoRow helper ────────────────────────────────────────────────────────
+  const InfoRow = ({IconComp, label, sub, action, red=false, last=false}) => (
+    <button onClick={action} style={{ width:"100%",padding:"14px 18px",background:"none",color:red?"#EF4444":"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:last?"none":"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:14,cursor:"pointer",border:"none" }}>
+      <div style={{ width:28,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+        <IconComp size={20} color={red?"#EF4444":"#A78BFA"} />
+      </div>
+      <div style={{ flex:1 }}>
+        <div>{label}</div>
+        {sub&&<div style={{ fontSize:12,color:"#4B5563",fontWeight:400,marginTop:1 }}>{sub}</div>}
+      </div>
+      <IcChevronRight size={16} color="#4B5563" />
+    </button>
+  );
 
   return (
     <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#0D0D12", minHeight:"100vh", color:"#E2E8F0", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
       <style>{css}</style>
 
-      {/* Hidden file inputs */}
       <input type="file" ref={fileRef} onChange={sendFile} style={{display:"none"}} accept="image/*,application/*" />
       <input type="file" ref={profilePhotoRef} onChange={handleProfilePhotoUpload} style={{display:"none"}} accept="image/*" />
 
@@ -536,8 +607,12 @@ export default function App() {
         <div onClick={()=>setLightbox(null)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.96)",zIndex:9998,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20 }}>
           <img src={lightbox} alt="" style={{ maxWidth:"100%",maxHeight:"80vh",borderRadius:12,objectFit:"contain" }} />
           <div style={{ display:"flex",gap:16,marginTop:24 }}>
-            <a href={lightbox} download="pulse-image.jpg" onClick={e=>e.stopPropagation()} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"12px 28px",borderRadius:24,fontSize:14,fontWeight:700,textDecoration:"none" }}>⬇️ Download</a>
-            <button onClick={()=>setLightbox(null)} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"12px 24px",borderRadius:24,fontSize:14,fontWeight:600,border:"1px solid #2A2A38" }}>Close</button>
+            <a href={lightbox} download="pulse-image.jpg" onClick={e=>e.stopPropagation()} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"12px 24px",borderRadius:24,fontSize:14,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:8 }}>
+              <IcDownload size={18} color="#fff" /> Download
+            </a>
+            <button onClick={()=>setLightbox(null)} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"12px 24px",borderRadius:24,fontSize:14,fontWeight:600,border:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:8 }}>
+              <IcClose size={16} color="#9CA3AF" /> Close
+            </button>
           </div>
         </div>
       )}
@@ -546,7 +621,7 @@ export default function App() {
       {fullProfileUser && (
         <div style={{ position:"fixed",inset:0,background:"#0D0D12",zIndex:300,overflowY:"auto",animation:"slideIn .25s ease" }}>
           <div style={{ padding:"14px 20px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1A1A26",position:"sticky",top:0,background:"#0D0D12",zIndex:10 }}>
-            <button onClick={()=>setFullProfileUser(null)} style={{ background:"#1A1A26",color:"#A78BFA",padding:"7px 14px",borderRadius:20,fontSize:13,fontWeight:700,border:"none" }}>← Back</button>
+            <button onClick={()=>setFullProfileUser(null)} style={{ background:"none",border:"none",padding:6,display:"flex",alignItems:"center" }}><IcBack size={24} color="#A78BFA"/></button>
             <div style={{ fontWeight:700,fontSize:15 }}>{fullProfileUser.name}</div>
           </div>
           <div style={{ height:140,background:`linear-gradient(135deg,${fullProfileUser.color}88,${fullProfileUser.color}22)`,position:"relative" }}>
@@ -559,14 +634,13 @@ export default function App() {
                 <div style={{ color:"#6B7280",fontSize:14,marginTop:2 }}>@{fullProfileUser.username}</div>
                 {nickname && <div style={{ color:"#A78BFA",fontSize:13,marginTop:2 }}>Nickname: {nickname}</div>}
               </div>
-              <button onClick={()=>{setFullProfileUser(null);setActiveChat(fullProfileUser);setView("chats");setChatView("messages");}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"10px 20px",borderRadius:24,fontSize:13,fontWeight:700,border:"none" }}>💬 Message</button>
+              <button onClick={()=>{setFullProfileUser(null);setActiveChat(fullProfileUser);setView("chats");setChatView("messages");}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"10px 20px",borderRadius:24,fontSize:13,fontWeight:700,border:"none",display:"flex",alignItems:"center",gap:8 }}>
+                <IcMessage size={16} color="#fff"/> Message
+              </button>
             </div>
-            {/* Last seen in full profile */}
             <div style={{ display:"inline-flex",alignItems:"center",gap:6,background:isOnline(fullProfileUser)?"#0f2d1a":"#1a1a26",padding:"6px 14px",borderRadius:20,marginBottom:16,border:`1px solid ${isOnline(fullProfileUser)?"#4ADE8033":"#2A2A38"}` }}>
               <span style={{ width:8,height:8,borderRadius:"50%",background:isOnline(fullProfileUser)?"#4ADE80":"#4B5563",display:"inline-block" }} />
-              <span style={{ fontSize:13,color:isOnline(fullProfileUser)?"#4ADE80":"#6B7280",fontWeight:600 }}>
-                {getLastSeen(fullProfileUser)}
-              </span>
+              <span style={{ fontSize:13,color:isOnline(fullProfileUser)?"#4ADE80":"#6B7280",fontWeight:600 }}>{getLastSeen(fullProfileUser)}</span>
             </div>
             <div style={{ background:"#141420",borderRadius:16,padding:16,marginBottom:16,border:"1px solid #1E1E2A" }}>
               <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:8 }}>About</div>
@@ -577,7 +651,7 @@ export default function App() {
               {editNickname ? (
                 <div style={{ display:"flex",gap:8 }}>
                   <input value={nickname} onChange={e=>setNickname(e.target.value)} placeholder="Set a nickname..." style={{ flex:1,background:"#1A1A26",borderRadius:10,padding:"8px 12px",fontSize:14,border:"1px solid #2A2A38" }} />
-                  <button onClick={()=>{setEditNickname(false);notify("Nickname saved!");}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:700 }}>Save</button>
+                  <button onClick={()=>{setEditNickname(false);notify("Nickname saved!");}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:700,border:"none" }}>Save</button>
                 </div>
               ) : (
                 <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
@@ -587,17 +661,11 @@ export default function App() {
               )}
             </div>
             <div style={{ background:"#141420",borderRadius:16,overflow:"hidden",border:"1px solid #1E1E2A" }}>
-              {[
-                {label:mutedUsers.includes(fullProfileUser.id)?"Unmute notifications":"Mute notifications",icon:mutedUsers.includes(fullProfileUser.id)?"🔔":"🔕",action:()=>muteUser(fullProfileUser),color:"#E2E8F0"},
-                {label:restrictedUsers.includes(fullProfileUser.id)?"Remove restriction":"Restrict",icon:"🔇",action:()=>restrictUser(fullProfileUser),color:"#E2E8F0"},
-                {label:"Remove friend",icon:"👋",action:()=>removeFriend(fullProfileUser),color:"#F97316"},
-                {label:"Block",icon:"🚫",action:()=>blockUser(fullProfileUser),color:"#EF4444"},
-                {label:"Report",icon:"🚩",action:()=>{notify("Reported.","#F97316");setFullProfileUser(null);},color:"#EF4444"},
-              ].map((opt,i,arr)=>(
-                <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"14px 18px",background:"none",color:opt.color,fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #1E1E2A":"none",display:"flex",alignItems:"center",gap:12,cursor:"pointer",border:"none" }}>
-                  <span style={{ fontSize:18 }}>{opt.icon}</span>{opt.label}
-                </button>
-              ))}
+              <InfoRow IconComp={mutedUsers.includes(fullProfileUser.id)?IcBell:IcBellOff} label={mutedUsers.includes(fullProfileUser.id)?"Unmute notifications":"Mute notifications"} action={()=>muteUser(fullProfileUser)} />
+              <InfoRow IconComp={IcRestrict} label={restrictedUsers.includes(fullProfileUser.id)?"Remove restriction":"Restrict"} action={()=>restrictUser(fullProfileUser)} />
+              <InfoRow IconComp={IcUserRemove} label="Remove friend" action={()=>removeFriend(fullProfileUser)} red />
+              <InfoRow IconComp={IcBlock} label="Block" action={()=>blockUser(fullProfileUser)} red />
+              <InfoRow IconComp={IcFlag} label="Report" action={()=>{notify("Reported.","#F97316");setFullProfileUser(null);}} red last />
             </div>
           </div>
         </div>
@@ -635,7 +703,7 @@ export default function App() {
       {/* SIGNUP */}
       {screen==="signup" && (
         <div className="screen-enter" style={{ flex:1,padding:"48px 28px 32px",display:"flex",flexDirection:"column",minHeight:"100vh",overflowY:"auto" }}>
-          <button onClick={()=>setScreen("splash")} style={{ background:"none",color:"#6B7280",fontSize:22,marginBottom:24,alignSelf:"flex-start" }}>←</button>
+          <button onClick={()=>setScreen("splash")} style={{ background:"none",border:"none",padding:6,marginBottom:18,alignSelf:"flex-start" }}><IcBack size={24} color="#6B7280"/></button>
           <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:28,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6 }}>Join Pulse</div>
           <div style={{ color:"#4B5563",fontSize:14,marginBottom:32 }}>Create your account to get started.</div>
           {["name","username","password"].map(field=>(
@@ -659,7 +727,7 @@ export default function App() {
       {/* LOGIN */}
       {screen==="login" && (
         <div className="screen-enter" style={{ flex:1,padding:"48px 28px 32px",display:"flex",flexDirection:"column",minHeight:"100vh" }}>
-          <button onClick={()=>setScreen("splash")} style={{ background:"none",color:"#6B7280",fontSize:22,marginBottom:24,alignSelf:"flex-start" }}>←</button>
+          <button onClick={()=>setScreen("splash")} style={{ background:"none",border:"none",padding:6,marginBottom:18,alignSelf:"flex-start" }}><IcBack size={24} color="#6B7280"/></button>
           <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:28,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6 }}>Welcome back</div>
           <div style={{ color:"#4B5563",fontSize:14,marginBottom:32 }}>Sign in to continue.</div>
           {["username","password"].map(field=>(
@@ -677,10 +745,10 @@ export default function App() {
       {/* HOME */}
       {screen==="home" && me && (
         <>
-          {/* ── Top Bar (sticky) ── */}
+          {/* Top Bar */}
           <div style={{ padding:"14px 20px",borderBottom:"1px solid #1A1A26",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#0D0D12",position:"sticky",top:0,zIndex:20,flexShrink:0 }}>
             {activeChat && view==="chats" ? (
-              <button onClick={()=>{setActiveChat(null);setMessages([]);setShowEmoji(false);setPeerTyping(false);setChatView("messages");setChatSearchOpen(false);setChatSearchQ("");}} style={{ background:"none",border:"none",padding:"6px",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:10 }}><IcBack size={24} color="#A78BFA"/></button>
+              <button onClick={()=>{setActiveChat(null);setMessages([]);setShowEmoji(false);setPeerTyping(false);setChatView("messages");setChatSearchOpen(false);setChatSearchQ("");}} style={{ background:"none",border:"none",padding:6,display:"flex",alignItems:"center" }}><IcBack size={24} color="#A78BFA"/></button>
             ) : (
               <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:22,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>pulse</div>
             )}
@@ -689,9 +757,8 @@ export default function App() {
                 <Avatar user={{...activeChat,online:isOnline(activeChat)}} size={36} showStatus ring />
                 <div>
                   <div style={{ fontWeight:700,fontSize:14 }}>{nickname||activeChat.name}</div>
-                  {/* ── Last seen label in chat header ── */}
                   <div style={{ fontSize:11,color:isOnline(activeChat)?"#4ADE80":"#6B7280" }}>
-                    {isOnline(activeChat) ? "● Active now" : `● ${getLastSeen(activeChat)}`}
+                    {isOnline(activeChat) ? "Active now" : getLastSeen(activeChat)}
                   </div>
                 </div>
               </div>
@@ -703,26 +770,22 @@ export default function App() {
             )}
           </div>
 
-          {/* Chat search bar */}
           {activeChat && chatSearchOpen && (
-            <div style={{ padding:"8px 16px",borderBottom:"1px solid #1A1A26",background:"#0D0D12",flexShrink:0 }}>
-              <input value={chatSearchQ} onChange={e=>setChatSearchQ(e.target.value)} placeholder="Search messages..." style={{ width:"100%",background:"#1A1A26",borderRadius:24,padding:"9px 16px",fontSize:14,border:"1px solid #2A2A38" }} autoFocus />
+            <div style={{ padding:"8px 16px",borderBottom:"1px solid #1A1A26",background:"#0D0D12",flexShrink:0,display:"flex",gap:8,alignItems:"center" }}>
+              <input value={chatSearchQ} onChange={e=>setChatSearchQ(e.target.value)} placeholder="Search messages..." style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"9px 16px",fontSize:14,border:"1px solid #2A2A38" }} autoFocus />
+              <button onClick={()=>{setChatSearchOpen(false);setChatSearchQ("");}} style={{ background:"none",border:"none",padding:4 }}><IcClose size={18} color="#6B7280"/></button>
             </div>
           )}
 
-          {/* ── CHAT MESSAGES VIEW — fixed layout, only list scrolls ── */}
+          {/* Chat messages — fixed layout */}
           {view==="chats" && activeChat && chatView==="messages" ? (
             <div style={{ flex:1,display:"flex",flexDirection:"column",minHeight:0,background:currentBg }} onClick={()=>setMsgMenu(null)}>
-
-              {/* Pinned banner */}
               {pinnedMsgs.length>0 && (
                 <div style={{ padding:"8px 16px",background:"#141420",borderBottom:"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:8,flexShrink:0 }}>
-                  <span>📌</span>
+                  <IcPushPin size={14} color="#A78BFA"/>
                   <span style={{ fontSize:13,color:"#C4C4D4",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1 }}>{pinnedMsgs[pinnedMsgs.length-1]?.text}</span>
                 </div>
               )}
-
-              {/* Scrollable message list */}
               <div style={{ flex:1,overflowY:"auto",padding:"12px 12px 8px",display:"flex",flexDirection:"column",gap:2 }}>
                 {filteredMessages.length===0&&!chatSearchQ && (
                   <div style={{ textAlign:"center",color:"#4B5563",marginTop:60,fontSize:14 }}>
@@ -746,12 +809,8 @@ export default function App() {
                   return (
                     <div key={msg.id} className="msg-in"
                       style={{ display:"flex",flexDirection:isMe?"row-reverse":"row",alignItems:"flex-end",gap:6,marginBottom:isLastInGroup?6:1,transform:isSwiping?`translateX(${swipeX}px)`:"none",transition:isSwiping?"none":"transform .2s ease" }}
-                      onTouchStart={e=>handleTouchStart(e,msg)}
-                      onTouchMove={handleTouchMove}
-                      onTouchEnd={()=>handleTouchEnd(msg)}>
-
+                      onTouchStart={e=>handleTouchStart(e,msg)} onTouchMove={handleTouchMove} onTouchEnd={()=>handleTouchEnd(msg)}>
                       {!isMe && <div style={{ width:32,flexShrink:0 }}>{isLastInGroup&&<Avatar user={activeChat} size={30} />}</div>}
-
                       <div style={{ maxWidth:"78%",display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start" }}>
                         {msg.reply_to_id && (
                           <div style={{ fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:3,textAlign:isMe?"right":"left" }}>
@@ -763,29 +822,22 @@ export default function App() {
                             {msg.reply_text}
                           </div>
                         )}
-                        {/* Bubble — class msg-bubble suppresses long-press highlight */}
-                        <div
-                          className="msg-bubble"
+                        <div className="msg-bubble"
                           onContextMenu={e=>{e.preventDefault();setMsgMenu({msg});}}
-                          onTouchStart={e=>{
-                            swipeStartX.current=e.touches[0].clientX;
-                            longPressTimer.current=setTimeout(()=>setMsgMenu({msg}),500);
-                          }}
+                          onTouchStart={e=>{swipeStartX.current=e.touches[0].clientX;longPressTimer.current=setTimeout(()=>setMsgMenu({msg}),500);}}
                           onTouchMove={e=>{clearTimeout(longPressTimer.current);handleTouchMove(e);}}
                           onTouchEnd={()=>{clearTimeout(longPressTimer.current);handleTouchEnd(msg);}}
                           style={{
                             background:isMe?"linear-gradient(135deg,#9333EA,#7C3AED)":"#1C1C28",
                             color:"#fff",
-                            borderRadius:isMe
-                              ?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px")
-                              :(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),
+                            borderRadius:isMe?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px"):(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),
                             padding:msg.type==="image"?4:"11px 15px",
                             fontSize:15,lineHeight:1.55,cursor:"pointer",wordBreak:"break-word",
                           }}>
                           {msg.type==="image"&&<img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)} style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block",cursor:"pointer" }} />}
                           {msg.type==="file"&&(
                             <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-                              <span style={{ fontSize:24 }}>📎</span>
+                              <IcFile size={24} color="#A78BFA"/>
                               <div><div style={{ fontWeight:600,fontSize:13 }}>{msg.text}</div><div style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</div></div>
                             </div>
                           )}
@@ -810,7 +862,11 @@ export default function App() {
                           <div style={{ fontSize:10,color:"#4B5563",marginTop:3,display:"flex",alignItems:"center",gap:4 }}>
                             {time}
                             {msg.edited&&<span style={{ color:"#6B7280" }}>· edited</span>}
-                            {isMe&&isLast&&<span style={{ color:msg.seen?"#A78BFA":"#4B5563",fontWeight:700 }}>{msg.seen?" ✓✓":" ✓"}</span>}
+                            {isMe&&isLast&&(
+                              msg.seen
+                                ? <IcDoubleCheck size={14} color="#A78BFA"/>
+                                : <IcCheck size={14} color="#4B5563"/>
+                            )}
                           </div>
                         )}
                       </div>
@@ -834,9 +890,9 @@ export default function App() {
                       ...(msgMenu.msg.from_id===me.id&&msgMenu.msg.type==="text"?[{label:"Edit",Icon:IcEdit,action:()=>{setEditingMsg({id:msgMenu.msg.id,text:msgMenu.msg.text});setMsgMenu(null);}}]:[]),
                       {label:"Copy",Icon:IcCopy,action:()=>{navigator.clipboard?.writeText(msgMenu.msg.text||"");notify("Copied!");setMsgMenu(null);}},
                       {label:"Forward",Icon:IcForward,action:()=>forwardMessage(msgMenu.msg)},
-                      {label:pinnedMsgs.find(m=>m.id===msgMenu.msg.id)?"Unpin":"Pin",Icon:IcPin,action:()=>pinMessage(msgMenu.msg)},
-                      ...(msgMenu.msg.type==="image"?[{label:"View photo",Icon:IcImage,color:"#E2E8F0",action:()=>{setLightbox(msgMenu.msg.data_url);setMsgMenu(null);}}]:[]),
-                      ...(msgMenu.msg.from_id===me.id?[{label:"Unsend",Icon:IcUnsend,color:"#EF4444",action:()=>unsendMessage(msgMenu.msg.id)}]:[{label:"Report",Icon:IcReport,color:"#EF4444",action:()=>{notify("Reported.","#F97316");setMsgMenu(null);}}]),
+                      {label:pinnedMsgs.find(m=>m.id===msgMenu.msg.id)?"Unpin":"Pin",Icon:IcPushPin,action:()=>pinMessage(msgMenu.msg)},
+                      ...(msgMenu.msg.type==="image"?[{label:"View photo",Icon:IcImage,action:()=>{setLightbox(msgMenu.msg.data_url);setMsgMenu(null);}}]:[]),
+                      ...(msgMenu.msg.from_id===me.id?[{label:"Unsend",Icon:IcUnsend,color:"#EF4444",action:()=>unsendMessage(msgMenu.msg.id)}]:[{label:"Report",Icon:IcFlag,color:"#EF4444",action:()=>{notify("Reported.","#F97316");setMsgMenu(null);}}]),
                     ].map((opt,i,arr)=>(
                       <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"13px 20px",background:"none",color:opt.color||"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #2A2A38":"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",border:"none" }}>
                         <opt.Icon size={20} color={opt.color||"#E2E8F0"}/>{opt.label}
@@ -846,40 +902,36 @@ export default function App() {
                 </div>
               )}
 
-              {/* Emoji picker */}
               {showEmoji&&(
                 <div style={{ background:"#141420",borderTop:"1px solid #1E1E2A",padding:"12px 16px",display:"flex",flexWrap:"wrap",gap:10,flexShrink:0 }}>
                   {EMOJIS.map(e=><span key={e} onClick={()=>setInput(p=>p+e)} style={{ fontSize:22,cursor:"pointer" }}>{e}</span>)}
                 </div>
               )}
 
-              {/* Reply preview */}
               {replyTo&&(
                 <div style={{ padding:"8px 16px",background:"#141420",borderTop:"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:10,flexShrink:0 }}>
                   <div style={{ flex:1,borderLeft:"3px solid #A78BFA",paddingLeft:10 }}>
                     <div style={{ fontSize:12,color:"#A78BFA",fontWeight:700 }}>Replying to {replyTo.from_id===me.id?"yourself":activeChat.name}</div>
-                    <div style={{ fontSize:13,color:"#9CA3AF",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{replyTo.type==="text"?replyTo.text:"📷 Photo"}</div>
+                    <div style={{ fontSize:13,color:"#9CA3AF",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{replyTo.type==="text"?replyTo.text:"Photo"}</div>
                   </div>
-                  <button onClick={()=>setReplyTo(null)} style={{ background:"none",border:"none",display:"flex",alignItems:"center",justifyContent:"center",padding:4 }}><IcClose size={18} color="#6B7280"/></button>
+                  <button onClick={()=>setReplyTo(null)} style={{ background:"none",border:"none",padding:4 }}><IcClose size={18} color="#6B7280"/></button>
                 </div>
               )}
 
-              {/* ── Input bar (sticky footer) ── */}
               <div style={{ padding:"10px 12px",borderTop:"1px solid #1A1A26",display:"flex",gap:6,alignItems:"center",background:"#0D0D12",flexShrink:0 }}>
-                <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}><IcAttach size={20}/></button>
-                <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}><IcEmoji size={20} color={showEmoji?"#A78BFA":"#9CA3AF"}/></button>
+                <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcAttach size={20}/></button>
+                <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcEmoji size={20} color={showEmoji?"#A78BFA":"#9CA3AF"}/></button>
                 <input value={input} onChange={e=>{setInput(e.target.value);signalTyping();}} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage(input)} placeholder="Message..." style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"11px 16px",fontSize:14 }} />
-                <button onClick={()=>sendMessage(input)} disabled={!input.trim()} className="ripple" style={{ background:input.trim()?"linear-gradient(135deg,#A78BFA,#6366F1)":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}><IcSend size={18}/></button>
+                <button onClick={()=>sendMessage(input)} disabled={!input.trim()} className="ripple" style={{ background:input.trim()?"linear-gradient(135deg,#A78BFA,#6366F1)":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcSend size={18}/></button>
               </div>
             </div>
 
           ) : (
-            /* ── All non-chat-message views scroll normally ── */
             <div style={{ flex:1,overflowY:"auto",paddingBottom:view==="chats"&&activeChat?0:72 }}>
 
-              {/* ── CHAT INFO VIEW ── */}
+              {/* Chat Info */}
               {view==="chats" && activeChat && chatView==="info" && (
-                <div style={{ padding:0 }}>
+                <div>
                   <div style={{ height:120,background:`linear-gradient(135deg,${activeChat.color}66,${activeChat.color}22)`,display:"flex",alignItems:"flex-end",padding:"0 20px 16px" }}>
                     <Avatar user={{...activeChat,online:isOnline(activeChat)}} size={72} showStatus ring />
                     <div style={{ marginLeft:16 }}>
@@ -887,56 +939,31 @@ export default function App() {
                       <div style={{ color:"#6B7280",fontSize:13 }}>@{activeChat.username}</div>
                     </div>
                   </div>
-                  {/* Action buttons with SVG icons */}
                   <div style={{ display:"flex",justifyContent:"space-around",padding:"20px 16px",borderBottom:"1px solid #1A1A26" }}>
                     {[
-                      {
-                        IconComp: IcMessage,
-                        label:"Message",
-                        action:()=>setChatView("messages"),
-                      },
-                      {
-                        IconComp: mutedUsers.includes(activeChat.id) ? IcUnmute : IcMute,
-                        label: mutedUsers.includes(activeChat.id) ? "Unmute" : "Mute",
-                        action:()=>muteUser(activeChat),
-                      },
-                      {
-                        IconComp: IcInfoSearch,
-                        label:"Search",
-                        action:()=>{setChatView("messages");setChatSearchOpen(true);},
-                      },
-                      {
-                        IconComp: IcDotsHoriz,
-                        label:"More",
-                        action:()=>setFullProfileUser(activeChat),
-                      },
+                      {IconComp:IcMessage,label:"Message",action:()=>setChatView("messages")},
+                      {IconComp:mutedUsers.includes(activeChat.id)?IcUnmute:IcMute,label:mutedUsers.includes(activeChat.id)?"Unmute":"Mute",action:()=>muteUser(activeChat)},
+                      {IconComp:IcInfoSearch,label:"Search",action:()=>{setChatView("messages");setChatSearchOpen(true);}},
+                      {IconComp:IcDotsHoriz,label:"More",action:()=>setFullProfileUser(activeChat)},
                     ].map(a=>(
                       <button key={a.label} onClick={a.action} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:6,background:"none",color:"#E2E8F0",cursor:"pointer",border:"none" }}>
                         <div style={{ width:48,height:48,borderRadius:"50%",background:"#1A1A26",display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid #2A2A38" }}>
-                          <a.IconComp size={20} color="#A78BFA" />
+                          <a.IconComp size={20} color="#A78BFA"/>
                         </div>
                         <span style={{ fontSize:11,color:"#6B7280",fontWeight:600 }}>{a.label}</span>
                       </button>
                     ))}
                   </div>
                   <div style={{ margin:"12px 16px",background:"#141420",borderRadius:16,overflow:"hidden",border:"1px solid #1E1E2A" }}>
-                    {[
-                      {icon:"🎨",label:"Chat theme",sub:CHAT_BGS.find(b=>b.id===chatBg)?.label||"Default",action:()=>setShowBgPicker(true)},
-                      {icon:"📌",label:"Pinned messages",sub:`${pinnedMsgs.length} pinned`,action:()=>{}},
-                      {icon:"🖼️",label:"Media",sub:`${messages.filter(m=>m.type==="image").length} photos`,action:()=>{}},
-                      {icon:"🏷️",label:"Nicknames",sub:nickname||"None set",action:()=>setFullProfileUser(activeChat)},
-                      {icon:"🔇",label:mutedUsers.includes(activeChat.id)?"Unmute notifications":"Mute notifications",sub:"",action:()=>muteUser(activeChat)},
-                      {icon:"🚫",label:"Block",sub:"",action:()=>blockUser(activeChat),red:true},
-                      {icon:"🚩",label:"Report",sub:"",action:()=>notify("Reported.","#F97316"),red:true},
-                    ].map((opt,i,arr)=>(
-                      <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"14px 18px",background:"none",color:opt.red?"#EF4444":"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #1E1E2A":"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",border:"none" }}>
-                        <span style={{ fontSize:20,width:28 }}>{opt.icon}</span>
-                        <div style={{ flex:1 }}><div>{opt.label}</div>{opt.sub&&<div style={{ fontSize:12,color:"#4B5563",fontWeight:400,marginTop:1 }}>{opt.sub}</div>}</div>
-                        <span style={{ color:"#4B5563",fontSize:14 }}>›</span>
-                      </button>
-                    ))}
+                    <InfoRow IconComp={IcPalette} label="Chat theme" sub={CHAT_BGS.find(b=>b.id===chatBg)?.label||"Default"} action={()=>setShowBgPicker(true)} />
+                    <InfoRow IconComp={IcPushPin} label="Pinned messages" sub={`${pinnedMsgs.length} pinned`} action={()=>{}} />
+                    <InfoRow IconComp={IcMedia} label="Media" sub={`${messages.filter(m=>m.type==="image").length} photos`} action={()=>{}} />
+                    <InfoRow IconComp={IcNickname} label="Nicknames" sub={nickname||"None set"} action={()=>setFullProfileUser(activeChat)} />
+                    <InfoRow IconComp={mutedUsers.includes(activeChat.id)?IcBell:IcBellOff} label={mutedUsers.includes(activeChat.id)?"Unmute notifications":"Mute notifications"} action={()=>muteUser(activeChat)} />
+                    <InfoRow IconComp={IcBlock} label="Block" action={()=>blockUser(activeChat)} red />
+                    <InfoRow IconComp={IcFlag} label="Report" action={()=>notify("Reported.","#F97316")} red last />
                   </div>
-                  {messages.filter(m=>m.type==="image").length > 0 && (
+                  {messages.filter(m=>m.type==="image").length>0 && (
                     <div style={{ margin:"0 16px 20px" }}>
                       <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:10 }}>Media</div>
                       <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:3,borderRadius:12,overflow:"hidden" }}>
@@ -946,14 +973,14 @@ export default function App() {
                       </div>
                     </div>
                   )}
-                  {pinnedMsgs.length > 0 && (
+                  {pinnedMsgs.length>0 && (
                     <div style={{ margin:"0 16px 20px" }}>
                       <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:10 }}>Pinned Messages</div>
                       {pinnedMsgs.map(m=>(
                         <div key={m.id} style={{ background:"#141420",borderRadius:12,padding:"12px 14px",marginBottom:8,border:"1px solid #2A2A38",display:"flex",alignItems:"center",gap:10 }}>
-                          <span style={{ fontSize:18 }}>📌</span>
+                          <IcPushPin size={16} color="#A78BFA"/>
                           <div style={{ flex:1,fontSize:13,color:"#C4C4D4",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{m.text}</div>
-                          <button onClick={()=>pinMessage(m)} style={{ background:"none",border:"none",display:"flex",alignItems:"center",justifyContent:"center",padding:2 }}><IcClose size={14} color="#4B5563"/></button>
+                          <button onClick={()=>pinMessage(m)} style={{ background:"none",border:"none",padding:2 }}><IcClose size={14} color="#4B5563"/></button>
                         </div>
                       ))}
                     </div>
@@ -961,7 +988,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* ── CHATS LIST ── */}
+              {/* Chats list */}
               {view==="chats" && !activeChat && (
                 <div style={{ padding:"16px 20px 6px" }}>
                   <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:14 }}>Messages</div>
@@ -979,8 +1006,8 @@ export default function App() {
                             <div style={{ fontSize:11,color:"#4B5563" }}>{time}</div>
                           </div>
                           <div style={{ fontSize:13,color:unread?"#A78BFA":"#6B7280",marginTop:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontWeight:unread?600:400 }}>
-                            {mutedUsers.includes(user.id)&&<span style={{ fontSize:11 }}>🔕 </span>}
-                            {lm?(lm.type==="image"?"📷 Photo":lm.type==="file"?`📎 ${lm.text}`:(lm.from_id===me.id?`You: ${lm.text}`:lm.text)):"Say hello! 👋"}
+                            {mutedUsers.includes(user.id)&&<IcBellOff size={11} color="#4B5563"/>}
+                            {" "}{lm?(lm.type==="image"?"Photo":lm.type==="file"?lm.text:(lm.from_id===me.id?`You: ${lm.text}`:lm.text)):"Say hello!"}
                           </div>
                         </div>
                         {unread&&<div style={{ width:10,height:10,borderRadius:"50%",background:"#A78BFA",flexShrink:0 }} />}
@@ -990,16 +1017,16 @@ export default function App() {
                 </div>
               )}
 
-              {/* ── FRIENDS ── */}
+              {/* Friends */}
               {view==="friends" && (
                 <div style={{ padding:"16px 20px" }}>
                   <div style={{ marginBottom:20 }}>
                     <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:8 }}>Find People</div>
                     <div style={{ display:"flex",gap:8 }}>
                       <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doSearch()} placeholder="Search by username..." style={{ flex:1,background:"#1A1A26",borderRadius:14,padding:"12px 16px",fontSize:14,border:"1px solid #2A2A38" }} />
-                      <button className="ripple" onClick={doSearch} disabled={searching} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"0 18px",borderRadius:14,fontWeight:700,fontSize:14,flexShrink:0 }}>{searching?"...":"Search"}</button>
+                      <button className="ripple" onClick={doSearch} disabled={searching} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"0 18px",borderRadius:14,fontWeight:700,fontSize:14,flexShrink:0,border:"none" }}>{searching?"...":"Search"}</button>
                     </div>
-                    <div style={{ fontSize:11,color:"#4B5563",marginTop:6 }}>💡 Your handle: <span style={{ color:"#A78BFA",fontWeight:700 }}>@{me.username}</span></div>
+                    <div style={{ fontSize:11,color:"#4B5563",marginTop:6 }}>Your handle: <span style={{ color:"#A78BFA",fontWeight:700 }}>@{me.username}</span></div>
                   </div>
                   {searchResults.map(user=>{
                     const isFriend=friends.some(f=>f.id===user.id); const sent=sentReqs.includes(user.id);
@@ -1007,7 +1034,7 @@ export default function App() {
                       <div key={user.id} style={{ background:"#141420",borderRadius:16,padding:"14px 16px",display:"flex",alignItems:"center",gap:14,marginBottom:12,border:"1px solid #2A2A38" }}>
                         <Avatar user={{...user,online:isOnline(user)}} size={50} showStatus />
                         <div style={{ flex:1 }}><div style={{ fontWeight:700,fontSize:14 }}>{user.name}</div><div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div><div style={{ fontSize:12,color:"#9CA3AF",marginTop:2 }}>{user.bio}</div></div>
-                        {isFriend?<span style={{ color:"#4ADE80",fontSize:12,fontWeight:700 }}>✓ Friends</span>:sent?<span style={{ color:"#6B7280",fontSize:12,fontWeight:700 }}>Sent</span>:<button className="ripple" onClick={()=>sendFriendReq(user)} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 16px",borderRadius:20,fontSize:12,fontWeight:700 }}>+ Add</button>}
+                        {isFriend?<span style={{ color:"#4ADE80",fontSize:12,fontWeight:700 }}>Friends</span>:sent?<span style={{ color:"#6B7280",fontSize:12,fontWeight:700 }}>Sent</span>:<button className="ripple" onClick={()=>sendFriendReq(user)} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 16px",borderRadius:20,fontSize:12,fontWeight:700,border:"none",display:"flex",alignItems:"center",gap:6 }}><IcPlusCircle size={14} color="#fff"/> Add</button>}
                       </div>
                     );
                   })}
@@ -1019,8 +1046,8 @@ export default function App() {
                           <Avatar user={user} size={46} />
                           <div style={{ flex:1 }}><div style={{ fontWeight:700,fontSize:14 }}>{user.name}</div><div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div></div>
                           <div style={{ display:"flex",gap:8 }}>
-                            <button className="ripple" onClick={()=>acceptReq(user)} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 14px",borderRadius:20,fontSize:12,fontWeight:700 }}>Accept</button>
-                            <button className="ripple" onClick={()=>declineReq(user)} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"8px 12px",borderRadius:20,fontSize:12,fontWeight:600 }}>✕</button>
+                            <button className="ripple" onClick={()=>acceptReq(user)} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 14px",borderRadius:20,fontSize:12,fontWeight:700,border:"none" }}>Accept</button>
+                            <button className="ripple" onClick={()=>declineReq(user)} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"8px 12px",borderRadius:20,fontSize:12,fontWeight:600,border:"none",display:"flex",alignItems:"center" }}><IcClose size={14} color="#9CA3AF"/></button>
                           </div>
                         </div>
                       ))}
@@ -1037,10 +1064,7 @@ export default function App() {
                           <div style={{ flex:1 }}>
                             <div style={{ fontWeight:600,fontSize:14 }}>{user.name}</div>
                             <div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div>
-                            {/* Last seen on friend list */}
-                            <div style={{ fontSize:11,color:online?"#4ADE80":"#6B7280",marginTop:2 }}>
-                              {getLastSeen(user)}
-                            </div>
+                            <div style={{ fontSize:11,color:online?"#4ADE80":"#6B7280",marginTop:2 }}>{getLastSeen(user)}</div>
                           </div>
                         </div>
                       );
@@ -1049,14 +1073,14 @@ export default function App() {
                 </div>
               )}
 
-              {/* ── PROFILE ── */}
+              {/* Profile */}
               {view==="profile" && (
                 <div style={{ padding:"20px" }}>
                   <div style={{ background:`linear-gradient(135deg,${me.color}22,#141420)`,borderRadius:20,padding:24,marginBottom:20,border:`1px solid ${me.color}33`,textAlign:"center" }}>
                     <div style={{ position:"relative",display:"inline-block" }}>
                       <Avatar user={me} size={88} ring />
                       <button onClick={()=>profilePhotoRef.current.click()} disabled={uploadingPhoto} style={{ position:"absolute",bottom:0,right:0,width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#A78BFA,#6366F1)",border:"2px solid #0D0D12",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 2px 8px #00000066" }}>
-                        {uploadingPhoto ? <div style={{width:14,height:14,border:"2px solid #fff",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/> : <IcCamera size={14}/>}
+                        {uploadingPhoto?<div style={{width:14,height:14,border:"2px solid #fff",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>:<IcCamera size={14}/>}
                       </button>
                     </div>
                     {editingProfile?(
@@ -1067,8 +1091,8 @@ export default function App() {
                           {COLORS.map(c=><div key={c} onClick={()=>setProfileDraft(p=>({...p,color:c}))} style={{ width:28,height:28,borderRadius:"50%",background:c,cursor:"pointer",border:(profileDraft.color??me.color)===c?"3px solid #fff":"3px solid transparent",boxShadow:(profileDraft.color??me.color)===c?`0 0 10px ${c}`:"none" }} />)}
                         </div>
                         <div style={{ display:"flex",gap:10,justifyContent:"center" }}>
-                          <button className="ripple" onClick={saveProfile} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"10px 24px",borderRadius:24,fontSize:13,fontWeight:800 }}>Save</button>
-                          <button className="ripple" onClick={()=>{setEditingProfile(false);setProfileDraft({});}} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"10px 20px",borderRadius:24,fontSize:13,fontWeight:600 }}>Cancel</button>
+                          <button className="ripple" onClick={saveProfile} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"10px 24px",borderRadius:24,fontSize:13,fontWeight:800,border:"none" }}>Save</button>
+                          <button className="ripple" onClick={()=>{setEditingProfile(false);setProfileDraft({});}} style={{ background:"#1E1E2A",color:"#9CA3AF",padding:"10px 20px",borderRadius:24,fontSize:13,fontWeight:600,border:"none" }}>Cancel</button>
                         </div>
                       </div>
                     ):(
@@ -1080,16 +1104,16 @@ export default function App() {
                           <span style={{ width:7,height:7,borderRadius:"50%",background:"#4ADE80",display:"inline-block" }} />Active now
                         </div>
                         <div style={{ display:"flex",gap:10,marginTop:16,justifyContent:"center" }}>
-                          <button className="ripple" onClick={()=>setEditingProfile(true)} style={{ background:"#1A1A26",color:"#A78BFA",padding:"9px 22px",borderRadius:24,fontSize:13,fontWeight:700,border:`1px solid ${me.color}44` }}>✎ Edit Profile</button>
-                          <button className="ripple" onClick={doLogout} style={{ background:"#1A1A26",color:"#EF4444",padding:"9px 18px",borderRadius:24,fontSize:13,fontWeight:700,border:"1px solid #EF444433" }}>Sign Out</button>
+                          <button className="ripple" onClick={()=>setEditingProfile(true)} style={{ background:"#1A1A26",color:"#A78BFA",padding:"9px 22px",borderRadius:24,fontSize:13,fontWeight:700,border:`1px solid ${me.color}44`,display:"flex",alignItems:"center",gap:8 }}><IcEdit size={15} color="#A78BFA"/> Edit Profile</button>
+                          <button className="ripple" onClick={doLogout} style={{ background:"#1A1A26",color:"#EF4444",padding:"9px 18px",borderRadius:24,fontSize:13,fontWeight:700,border:"1px solid #EF444433",display:"flex",alignItems:"center",gap:8 }}><IcUnsend size={15} color="#EF4444"/> Sign Out</button>
                         </div>
                       </>
                     )}
                   </div>
                   <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20 }}>
-                    {[{label:"Friends",value:friends.length,icon:"👥"},{label:"Requests",value:requests.length,icon:"📩"}].map(s=>(
+                    {[{label:"Friends",value:friends.length,IconComp:IcFriends},{label:"Requests",value:requests.length,IconComp:IcBell}].map(s=>(
                       <div key={s.label} style={{ background:"#141420",borderRadius:16,padding:"18px 16px",textAlign:"center",border:"1px solid #1E1E2A" }}>
-                        <div style={{ fontSize:28 }}>{s.icon}</div>
+                        <s.IconComp size={28} color="#A78BFA"/>
                         <div style={{ fontWeight:800,fontSize:22,color:"#A78BFA",marginTop:4 }}>{s.value}</div>
                         <div style={{ fontSize:11,color:"#4B5563",fontWeight:700,marginTop:2,textTransform:"uppercase",letterSpacing:1 }}>{s.label}</div>
                       </div>
@@ -1108,10 +1132,14 @@ export default function App() {
           {/* Bottom Nav */}
           {!(view==="chats"&&activeChat) && (
             <div style={{ position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0D0D12",borderTop:"1px solid #1A1A26",display:"flex",justifyContent:"space-around",padding:"10px 0 16px",zIndex:10 }}>
-              {[{id:"chats",icon:"💬",label:"Chats"},{id:"friends",icon:"👥",label:"Friends",badge:requests.length},{id:"profile",icon:"👤",label:"Profile"}].map(tab=>(
-                <button key={tab.id} className="tab-btn" onClick={()=>setView(tab.id)} style={{ background:"none",display:"flex",flexDirection:"column",alignItems:"center",gap:4,color:view===tab.id?"#A78BFA":"#4B5563",padding:"6px 24px",borderRadius:16,transition:"all .15s",position:"relative" }}>
+              {[
+                {id:"chats",IconComp:IcChat,label:"Chats"},
+                {id:"friends",IconComp:IcFriends,label:"Friends",badge:requests.length},
+                {id:"profile",IconComp:IcUser,label:"Profile"},
+              ].map(tab=>(
+                <button key={tab.id} className="tab-btn" onClick={()=>setView(tab.id)} style={{ background:"none",display:"flex",flexDirection:"column",alignItems:"center",gap:4,color:view===tab.id?"#A78BFA":"#4B5563",padding:"6px 24px",borderRadius:16,transition:"all .15s",position:"relative",border:"none" }}>
                   {tab.badge>0&&<span style={{ position:"absolute",top:0,right:10,background:"#EF4444",color:"#fff",borderRadius:20,fontSize:9,fontWeight:700,padding:"1px 5px" }}>{tab.badge}</span>}
-                  <span style={{ fontSize:21 }}>{tab.icon}</span>
+                  <tab.IconComp size={22} color={view===tab.id?"#A78BFA":"#4B5563"}/>
                   <span style={{ fontSize:10,fontWeight:700,letterSpacing:.5 }}>{tab.label}</span>
                 </button>
               ))}

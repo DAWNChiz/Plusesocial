@@ -500,7 +500,7 @@ export default function App() {
                         <div style={{ maxWidth:"74%",display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start" }}>
                           <div
                             onContextMenu={e=>{e.preventDefault();if(isMe)setMsgMenu({msg,x:e.clientX,y:e.clientY});}}
-                            onTouchStart={isMe?(()=>{const t=setTimeout(()=>setMsgMenu({msg,x:0,y:0}),500);return()=>clearTimeout(t)})()):undefined}
+                            onTouchStart={isMe?()=>{const t=setTimeout(()=>setMsgMenu({msg,x:0,y:0}),500);return()=>clearTimeout(t)}:undefined}
                             style={{ background:isMe?"linear-gradient(135deg, #A78BFA, #6366F1)":"#1E1E2A",color:"#fff",borderRadius:isMe?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:msg.type==="image"?4:"10px 14px",fontSize:14,lineHeight:1.55,cursor:isMe?"pointer":"default" }}>
                             {msg.type==="image" && (
                               <img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)}

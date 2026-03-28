@@ -417,7 +417,8 @@ export default function App() {
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap');
     *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%;overflow:hidden}
+    html,body{height:100%;height:-webkit-fill-available}
+    #root{height:100dvh;height:-webkit-fill-available;display:flex;flex-direction:column}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2A2A38;border-radius:10px}
     input,textarea{outline:none;border:none;background:none;font-family:inherit;color:inherit}
     button{cursor:pointer;border:none;font-family:inherit}
@@ -454,7 +455,7 @@ export default function App() {
 
   // ── APP SHELL: full-height flex column, nothing scrolls except message area
   return (
-    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#0D0D12", height:"100vh", color:"#E2E8F0", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
+    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#0D0D12", height:"100dvh", minHeight:"-webkit-fill-available", color:"#E2E8F0", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
       <style>{css}</style>
 
       <input type="file" ref={fileRef} onChange={sendFile} style={{display:"none"}} accept="image/*,application/*" />
@@ -734,7 +735,7 @@ export default function App() {
               {/* Context menu */}
               {msgMenu&&(
                 <div onClick={()=>setMsgMenu(null)} style={{ position:"fixed",inset:0,zIndex:100 }}>
-                  <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:90,left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:250,boxShadow:"0 8px 40px #00000088",border:"1px solid #2A2A38",zIndex:101 }}>
+                  <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:"80px",left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:260,boxShadow:"0 8px 40px #00000088",border:"1px solid #2A2A38",zIndex:101 }}>
                     <div style={{ display:"flex",justifyContent:"space-around",padding:"12px 16px",borderBottom:"1px solid #2A2A38" }}>
                       {REACT_EMOJIS.map(e=><span key={e} onClick={()=>toggleReaction(msgMenu.msg,e)} style={{ fontSize:24,cursor:"pointer" }}>{e}</span>)}
                     </div>
@@ -778,7 +779,7 @@ export default function App() {
 
           ) : (
             /* ── ALL OTHER VIEWS — scrollable ── */
-            <div style={{ flex:1,overflowY:"auto",paddingBottom:72 }}>
+            <div style={{ flex:1,overflowY:"auto",paddingBottom:16 }}>
 
               {/* Chat Info */}
               {view==="chats" && activeChat && chatView==="info" && (

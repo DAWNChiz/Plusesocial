@@ -52,6 +52,11 @@ const IcCheck = ({size=16,color="#A78BFA"}) => (<svg width={size} height={size} 
 const IcDoubleCheck = ({size=16,color="#A78BFA"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 11 7 8 4"/><polyline points="23 7 11 13 7 9"/></svg>);
 const IcFile = ({size=24,color="#A78BFA"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>);
 const IcPlusCircle = ({size=22,color="#A78BFA"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>);
+const IcPhone = ({size=20,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.93 19.79 19.79 0 01.14 1.3 2 2 0 012.11 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.18v2.74z"/></svg>);
+const IcVideoCall = ({size=20,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>);
+const IcMic = ({size=20,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>);
+const IcMicOff = ({size=20,color="#EF4444"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/><path d="M17 16.95A7 7 0 015 12v-2M19 10v2a7 7 0 01-.09 1.11M12 19v4M8 23h8"/></svg>);
+const IcPhoneOff = ({size=24,color="#EF4444"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07M7.42 7.42A19.5 19.5 0 003.07 9.93 19.79 19.79 0 01.14 1.3a2 2 0 011.97-1.3h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11l-.27.27"/><line x1="23" y1="1" x2="1" y2="23"/></svg>);
 const IcStar = ({size=20,color="#FBBF24",fill="none"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>);
 
 // ── Avatar ─────────────────────────────────────────────────────────────────
@@ -131,6 +136,13 @@ export default function App() {
   const [avatarOverlay, setAvatarOverlay] = useState(null);
   const [pinnedChats, setPinnedChats] = useState([]);
   const chatRowLongPress = useRef(null);
+  // Call & voice note state
+  const [activeCall, setActiveCall] = useState(null); // {type:'audio'|'video', user, status:'calling'|'connected'}
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordTimerRef = useRef(null);
 
   const fileRef = useRef();
   const profilePhotoRef = useRef();
@@ -408,7 +420,86 @@ export default function App() {
   const handleTouchMove = (e) => { const dx=e.touches[0].clientX-swipeStartX.current; if(dx>0&&dx<80) setSwipeX(dx); };
   const handleTouchEnd = (msg) => { if (swipeX>50) setReplyTo(msg); setSwipeX(0); setSwipeReply(null); };
 
-  // ── Toggle pin favourite chat ──────────────────────────────────────────
+  // ── Prevent browser swipe-back from closing the app ──────────────────────
+  useEffect(() => {
+    // Push a state so there's always something to "go back" to
+    window.history.pushState({ pulse: true }, "");
+    const onPop = (e) => {
+      // Instead of letting browser navigate back, we intercept
+      window.history.pushState({ pulse: true }, "");
+      // Then handle our own back navigation
+      if (activeChat) {
+        setActiveChat(null); setMessages([]); setMsgsLoaded(false);
+        setShowEmoji(false); setPeerTyping(false);
+        setChatView("messages"); setChatSearchOpen(false); setChatSearchQ("");
+      } else if (fullProfileUser) {
+        setFullProfileUser(null);
+      } else if (avatarOverlay) {
+        setAvatarOverlay(null);
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [activeChat, fullProfileUser, avatarOverlay]);
+
+  // ── Audio/Video Call ──────────────────────────────────────────────────────
+  const startCall = (type) => {
+    if (!activeChat) return;
+    setActiveCall({ type, user: activeChat, status: "calling" });
+    // Simulate connecting after 3s (real WebRTC would go here)
+    setTimeout(() => {
+      setActiveCall(prev => prev ? { ...prev, status: "connected" } : null);
+    }, 3000);
+  };
+
+  const endCall = () => { setActiveCall(null); };
+
+  // ── Voice Note Recording ───────────────────────────────────────────────────
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      mr.ondataavailable = e => audioChunksRef.current.push(e.data);
+      mr.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach(t => t.stop());
+        const reader = new FileReader();
+        reader.onload = async ev => {
+          await sendMessage("🎤 Voice note", "file", { data_url: ev.target.result, file_size: (blob.size/1024).toFixed(1) + " KB", is_voice: true });
+        };
+        reader.readAsDataURL(blob);
+        setRecordSeconds(0);
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setIsRecording(true);
+      recordTimerRef.current = setInterval(() => setRecordSeconds(s => s + 1), 1000);
+    } catch { notify("Microphone access denied.", "#EF4444"); }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      clearInterval(recordTimerRef.current);
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.ondataavailable = null;
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
+    }
+    setIsRecording(false);
+    setRecordSeconds(0);
+    clearInterval(recordTimerRef.current);
+    audioChunksRef.current = [];
+  };
+
+  const fmtSecs = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
   const togglePinChat = (userId) => {
     setPinnedChats(p => p.includes(userId) ? p.filter(id=>id!==userId) : [...p, userId]);
     notify(pinnedChats.includes(userId) ? "Chat unpinned." : "Chat pinned ⭐");
@@ -461,6 +552,35 @@ export default function App() {
 
       <input type="file" ref={fileRef} onChange={sendFile} style={{display:"none"}} accept="image/*,application/*" />
       <input type="file" ref={profilePhotoRef} onChange={handleProfilePhotoUpload} style={{display:"none"}} accept="image/*" />
+
+      {/* ── ACTIVE CALL OVERLAY ── */}
+      {activeCall && (
+        <div style={{ position:"fixed",inset:0,background:"#0A0A10",zIndex:5000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:24 }}>
+          <div style={{ fontSize:13,color:"#6B7280",fontWeight:600,letterSpacing:1,textTransform:"uppercase" }}>
+            {activeCall.type==="video"?"Video Call":"Audio Call"} · {activeCall.status==="calling"?"Calling...":"Connected"}
+          </div>
+          <Avatar user={activeCall.user} size={100} ring />
+          <div style={{ fontWeight:800,fontSize:24,color:"#E2E8F0" }}>{activeCall.user.name}</div>
+          {activeCall.status==="calling" && (
+            <div style={{ display:"flex",gap:6 }}>
+              {[0,1,2].map(i=><span key={i} style={{ width:8,height:8,borderRadius:"50%",background:"#A78BFA",display:"inline-block",animation:`typingBounce 1.2s ${i*0.3}s infinite` }}/>)}
+            </div>
+          )}
+          {activeCall.status==="connected" && (
+            <div style={{ fontSize:13,color:"#4ADE80",fontWeight:600 }}>● Live</div>
+          )}
+          {activeCall.type==="video" && activeCall.status==="connected" && (
+            <div style={{ width:280,height:180,borderRadius:18,background:"linear-gradient(135deg,#1a1a2e,#16213e)",display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid #2A2A38" }}>
+              <div style={{ color:"#4B5563",fontSize:13 }}>Camera preview</div>
+            </div>
+          )}
+          <div style={{ display:"flex",gap:32,marginTop:20 }}>
+            <button onClick={endCall} style={{ width:66,height:66,borderRadius:"50%",background:"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",border:"none",boxShadow:"0 4px 20px #EF444466" }}>
+              <IcPhoneOff size={28} color="#fff"/>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && <div style={{ position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:toast.color,color:"#fff",padding:"10px 22px",borderRadius:28,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:`0 4px 24px ${toast.color}66`,animation:"popIn .2s ease",whiteSpace:"nowrap",maxWidth:"90vw",textAlign:"center" }}>{toast.msg}</div>}
@@ -628,20 +748,29 @@ export default function App() {
       {screen==="home" && me && (
         <>
           {/* STICKY Top Bar */}
-          <div style={{ padding:"14px 20px",borderBottom:"1px solid #1A1A26",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#0D0D12",flexShrink:0,zIndex:20 }}>
+          <div style={{ padding:"12px 16px",borderBottom:"1px solid #1A1A26",display:"flex",alignItems:"center",gap:8,background:"#0D0D12",flexShrink:0,zIndex:20 }}>
             {activeChat && view==="chats" ? (
-              <button onClick={()=>{setActiveChat(null);setMessages([]);setMsgsLoaded(false);setShowEmoji(false);setPeerTyping(false);setChatView("messages");setChatSearchOpen(false);setChatSearchQ("");}} style={{ background:"none",border:"none",padding:6,display:"flex",alignItems:"center" }}><IcBack size={24} color="#A78BFA"/></button>
+              <button onClick={()=>{setActiveChat(null);setMessages([]);setMsgsLoaded(false);setShowEmoji(false);setPeerTyping(false);setChatView("messages");setChatSearchOpen(false);setChatSearchQ("");}} style={{ background:"none",border:"none",padding:6,display:"flex",alignItems:"center",flexShrink:0 }}><IcBack size={24} color="#A78BFA"/></button>
             ) : (
-              <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:22,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>pulse</div>
+              <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:22,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",flex:1 }}>pulse</div>
             )}
             {activeChat && view==="chats" ? (
-              <div style={{ display:"flex",alignItems:"center",gap:10,cursor:"pointer",flex:1,marginLeft:12 }} onClick={()=>setChatView(v=>v==="messages"?"info":"messages")}>
-                <Avatar user={{...activeChat,online:isOnline(activeChat)}} size={36} showStatus ring />
-                <div>
-                  <div style={{ fontWeight:700,fontSize:14 }}>{nickname||activeChat.name}</div>
-                  <div style={{ fontSize:11,color:isOnline(activeChat)?"#4ADE80":"#6B7280" }}>{isOnline(activeChat)?"Active now":getLastSeen(activeChat)}</div>
+              <>
+                <div style={{ display:"flex",alignItems:"center",gap:10,cursor:"pointer",flex:1 }} onClick={()=>setChatView(v=>v==="messages"?"info":"messages")}>
+                  <Avatar user={{...activeChat,online:isOnline(activeChat)}} size={36} showStatus ring />
+                  <div>
+                    <div style={{ fontWeight:700,fontSize:14 }}>{nickname||activeChat.name}</div>
+                    <div style={{ fontSize:11,color:isOnline(activeChat)?"#4ADE80":"#6B7280" }}>{isOnline(activeChat)?"Active now":getLastSeen(activeChat)}</div>
+                  </div>
                 </div>
-              </div>
+                {/* Call buttons */}
+                <button onClick={()=>startCall("audio")} style={{ background:"#1A1A26",border:"1px solid #2A2A38",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+                  <IcPhone size={18} color="#A78BFA"/>
+                </button>
+                <button onClick={()=>startCall("video")} style={{ background:"#1A1A26",border:"1px solid #2A2A38",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+                  <IcVideoCall size={18} color="#A78BFA"/>
+                </button>
+              </>
             ) : (
               <div style={{ display:"flex",alignItems:"center",gap:10 }}>
                 {requests.length>0 && <span style={{ background:"#EF4444",color:"#fff",borderRadius:20,fontSize:11,fontWeight:700,padding:"2px 8px" }}>{requests.length} req</span>}
@@ -711,7 +840,17 @@ export default function App() {
                           onTouchEnd={()=>{clearTimeout(longPressTimer.current);handleTouchEnd(msg);}}
                           style={{ background:isMe?"linear-gradient(135deg,#9333EA,#7C3AED)":"#1C1C28",color:"#fff",borderRadius:isMe?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px"):(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),padding:msg.type==="image"?4:"11px 15px",fontSize:15,lineHeight:1.55,cursor:"pointer",wordBreak:"break-word" }}>
                           {msg.type==="image"&&<img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)} style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block",cursor:"pointer" }} />}
-                          {msg.type==="file"&&(<div style={{ display:"flex",alignItems:"center",gap:10 }}><IcFile size={24} color="#A78BFA"/><div><div style={{ fontWeight:600,fontSize:13 }}>{msg.text}</div><div style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</div></div></div>)}
+                          {msg.type==="file"&&(
+                            msg.is_voice ? (
+                              <div style={{ display:"flex",alignItems:"center",gap:10,minWidth:180 }}>
+                                <IcMic size={20} color={isMe?"#fff":"#A78BFA"}/>
+                                <audio controls src={msg.data_url} style={{ height:32,flex:1,filter:"invert(0)",maxWidth:160 }}/>
+                                <span style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</span>
+                              </div>
+                            ) : (
+                              <div style={{ display:"flex",alignItems:"center",gap:10 }}><IcFile size={24} color="#A78BFA"/><div><div style={{ fontWeight:600,fontSize:13 }}>{msg.text}</div><div style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</div></div></div>
+                            )
+                          )}
                           {msg.type==="text"&&(isEditing?(
                             <div onClick={e=>e.stopPropagation()}>
                               <input value={editingMsg.text} onChange={e=>setEditingMsg(p=>({...p,text:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")saveEditedMsg();if(e.key==="Escape")setEditingMsg(null);}} autoFocus style={{ background:"rgba(255,255,255,0.15)",border:"none",borderRadius:8,padding:"4px 8px",color:"#fff",fontSize:14,width:"100%",outline:"none" }} />
@@ -771,10 +910,34 @@ export default function App() {
 
               {/* Input bar — always at bottom */}
               <div style={{ padding:"10px 12px",borderTop:"1px solid #1A1A26",display:"flex",gap:6,alignItems:"center",background:"#0D0D12",flexShrink:0 }}>
-                <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcAttach size={20}/></button>
-                <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcEmoji size={20} color={showEmoji?"#A78BFA":"#9CA3AF"}/></button>
-                <input value={input} onChange={e=>{setInput(e.target.value);signalTyping();}} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage(input)} placeholder="Message..." style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"11px 16px",fontSize:14 }} />
-                <button onClick={()=>sendMessage(input)} disabled={!input.trim()} className="ripple" style={{ background:input.trim()?"linear-gradient(135deg,#A78BFA,#6366F1)":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcSend size={18}/></button>
+                {isRecording ? (
+                  // ── Voice recording UI ──
+                  <>
+                    <button onClick={cancelRecording} style={{ background:"#1E1E2A",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}>
+                      <IcClose size={18} color="#EF4444"/>
+                    </button>
+                    <div style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"11px 16px",display:"flex",alignItems:"center",gap:10 }}>
+                      <span style={{ width:8,height:8,borderRadius:"50%",background:"#EF4444",display:"inline-block",animation:"typingBounce 1s infinite" }}/>
+                      <span style={{ fontSize:14,color:"#E2E8F0",fontWeight:600 }}>Recording {fmtSecs(recordSeconds)}</span>
+                    </div>
+                    <button onClick={stopRecording} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",borderRadius:"50%",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}>
+                      <IcCheck size={22} color="#fff"/>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcAttach size={20}/></button>
+                    <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcEmoji size={20} color={showEmoji?"#A78BFA":"#9CA3AF"}/></button>
+                    <input value={input} onChange={e=>{setInput(e.target.value);signalTyping();}} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage(input)} placeholder="Message..." style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"11px 16px",fontSize:14 }} />
+                    {input.trim() ? (
+                      <button onClick={()=>sendMessage(input)} className="ripple" style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcSend size={18}/></button>
+                    ) : (
+                      <button onTouchStart={startRecording} onMouseDown={startRecording} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}>
+                        <IcMic size={20} color="#A78BFA"/>
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
@@ -886,10 +1049,22 @@ export default function App() {
                   {searchResults.map(user=>{
                     const isFriend=friends.some(f=>f.id===user.id); const sent=sentReqs.includes(user.id);
                     return (
-                      <div key={user.id} style={{ background:"#141420",borderRadius:16,padding:"14px 16px",display:"flex",alignItems:"center",gap:14,marginBottom:12,border:"1px solid #2A2A38" }}>
+                      <div key={user.id} style={{ background:"#141420",borderRadius:16,padding:"14px 16px",display:"flex",alignItems:"center",gap:14,marginBottom:12,border:"1px solid #2A2A38",cursor:"pointer" }}
+                        onClick={()=>setFullProfileUser(user)}>
                         <Avatar user={{...user,online:isOnline(user)}} size={50} showStatus />
-                        <div style={{ flex:1 }}><div style={{ fontWeight:700,fontSize:14 }}>{user.name}</div><div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div><div style={{ fontSize:12,color:"#9CA3AF",marginTop:2 }}>{user.bio}</div></div>
-                        {isFriend?<span style={{ color:"#4ADE80",fontSize:12,fontWeight:700 }}>Friends</span>:sent?<span style={{ color:"#6B7280",fontSize:12,fontWeight:700 }}>Sent</span>:<button className="ripple" onClick={()=>sendFriendReq(user)} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 16px",borderRadius:20,fontSize:12,fontWeight:700,border:"none",display:"flex",alignItems:"center",gap:6 }}><IcPlusCircle size={14} color="#fff"/> Add</button>}
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontWeight:700,fontSize:14 }}>{user.name}</div>
+                          <div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div>
+                          <div style={{ fontSize:12,color:"#9CA3AF",marginTop:2 }}>{user.bio}</div>
+                        </div>
+                        <div onClick={e=>e.stopPropagation()}>
+                          {isFriend
+                            ? <span style={{ color:"#4ADE80",fontSize:12,fontWeight:700 }}>Friends</span>
+                            : sent
+                              ? <span style={{ color:"#6B7280",fontSize:12,fontWeight:700 }}>Sent</span>
+                              : <button className="ripple" onClick={e=>{e.stopPropagation();sendFriendReq(user);}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 16px",borderRadius:20,fontSize:12,fontWeight:700,border:"none",display:"flex",alignItems:"center",gap:6 }}><IcPlusCircle size={14} color="#fff"/> Add</button>
+                          }
+                        </div>
                       </div>
                     );
                   })}

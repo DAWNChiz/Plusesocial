@@ -132,19 +132,16 @@ export default function App() {
   const [editNickname, setEditNickname] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [, setTick] = useState(0);
-  // NEW: avatar tap overlay + pinned chats
   const [avatarOverlay, setAvatarOverlay] = useState(null);
   const [pinnedChats, setPinnedChats] = useState([]);
   const chatRowLongPress = useRef(null);
-  // NEW
   const [chatListSearch, setChatListSearch] = useState("");
-  const [chatRowMenu, setChatRowMenu] = useState(null); // {user} for long-press options
-  const [deletedChats, setDeletedChats] = useState([]); // locally hidden chats
-  const [markedRead, setMarkedRead] = useState([]); // locally marked-read chat ids
+  const [chatRowMenu, setChatRowMenu] = useState(null);
+  const [deletedChats, setDeletedChats] = useState([]);
+  const [markedRead, setMarkedRead] = useState([]);
   const [isPulling, setIsPulling] = useState(false);
   const pullStartY = useRef(0);
-  // Call & voice note state
-  const [activeCall, setActiveCall] = useState(null); // {type:'audio'|'video', user, status:'calling'|'connected'}
+  const [activeCall, setActiveCall] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const mediaRecorderRef = useRef(null);
@@ -154,13 +151,13 @@ export default function App() {
   const fileRef = useRef();
   const profilePhotoRef = useRef();
   const chatEndRef = useRef();
+  const textareaRef = useRef(); // ── NEW: ref to reset textarea height
   const typingTimerRef = useRef();
   const realtimeMsgRef = useRef(null);
   const realtimeTypingRef = useRef(null);
   const heartbeatRef = useRef(null);
   const longPressTimer = useRef(null);
   const swipeStartX = useRef(0);
-  // track unsent message ids to suppress realtime re-insertion
   const unsentIds = useRef(new Set());
 
   const currentBg = CHAT_BGS.find(b=>b.id===chatBg)?.bg || "#0D0D12";
@@ -275,13 +272,11 @@ export default function App() {
     load(); const id=setInterval(load,5000); return ()=>clearInterval(id);
   }, [me,friends]);
 
-  // ── FIX: loadMessages ignores unsent ids ──────────────────────────────────
   const loadMessages = useCallback(async () => {
     if (!me||!activeChat) return;
     const {data} = await supabase.from("messages").select("*")
       .or(`and(from_id.eq.${me.id},to_id.eq.${activeChat.id}),and(from_id.eq.${activeChat.id},to_id.eq.${me.id})`)
       .order("created_at",{ascending:true});
-    // Filter out any ids that are in the unsent set (deleted but not yet propagated)
     const filtered = (data||[]).filter(m => !unsentIds.current.has(m.id));
     setMessages(filtered);
     setMsgsLoaded(true);
@@ -298,7 +293,6 @@ export default function App() {
     realtimeMsgRef.current?.unsubscribe();
     realtimeMsgRef.current = supabase.channel(`msgs:${[me.id,activeChat.id].sort().join("_")}`)
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},(p)=>{
-        // Ignore if this message was locally unsent
         if (p.new?.id && unsentIds.current.has(p.new.id)) return;
         loadMessages();
       })
@@ -329,13 +323,23 @@ export default function App() {
     },2500);
   };
 
+  // ── FIX: reset textarea height after sending ──────────────────────────────
+  const resetTextarea = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+  };
+
   const sendMessage = async (text, type="text", extra={}) => {
     if ((!text?.trim()&&type==="text")||!activeChat) return;
     const msg = { from_id:me.id, to_id:activeChat.id, text:type==="text"?text.trim():text, type, seen:false, reactions:[], ...extra };
     if (replyTo) { msg.reply_to_id=replyTo.id; msg.reply_text=replyTo.type==="text"?replyTo.text:"Photo"; msg.reply_from=replyTo.from_id===me.id?"You":activeChat.name; }
     const {data,error} = await supabase.from("messages").insert(msg).select().single();
     if (!error&&data) setMessages(p=>[...p,data]);
-    setInput(""); setShowEmoji(false); setReplyTo(null);
+    setInput("");
+    resetTextarea(); // ── FIX: shrink textarea back to 1 row
+    setShowEmoji(false);
+    setReplyTo(null);
     await supabase.from("typing").upsert({from_id:me.id,to_id:activeChat.id,updated_at:new Date(0).toISOString()},{onConflict:"from_id,to_id"});
   };
 
@@ -350,13 +354,11 @@ export default function App() {
     reader.readAsDataURL(file); e.target.value="";
   };
 
-  // ── FIX: unsend — mark id as unsent FIRST, remove from UI, then delete from DB
-  // This prevents the realtime INSERT or re-fetch from bringing it back
   const unsendMessage = async (msgId) => {
-    unsentIds.current.add(msgId);                            // guard against re-fetch
-    setMessages(p=>p.filter(m=>m.id!==msgId));              // remove from UI instantly
+    unsentIds.current.add(msgId);
+    setMessages(p=>p.filter(m=>m.id!==msgId));
     setMsgMenu(null);
-    await supabase.from("messages").delete().eq("id",msgId); // no from_id filter — delete for both sides
+    await supabase.from("messages").delete().eq("id",msgId);
     notify("Message unsent.");
   };
 
@@ -427,14 +429,10 @@ export default function App() {
   const handleTouchMove = (e) => { const dx=e.touches[0].clientX-swipeStartX.current; if(dx>0&&dx<80) setSwipeX(dx); };
   const handleTouchEnd = (msg) => { if (swipeX>50) setReplyTo(msg); setSwipeX(0); setSwipeReply(null); };
 
-  // ── Prevent browser swipe-back from closing the app ──────────────────────
   useEffect(() => {
-    // Push a state so there's always something to "go back" to
     window.history.pushState({ pulse: true }, "");
     const onPop = (e) => {
-      // Instead of letting browser navigate back, we intercept
       window.history.pushState({ pulse: true }, "");
-      // Then handle our own back navigation
       if (activeChat) {
         setActiveChat(null); setMessages([]); setMsgsLoaded(false);
         setShowEmoji(false); setPeerTyping(false);
@@ -449,11 +447,9 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, [activeChat, fullProfileUser, avatarOverlay]);
 
-  // ── Audio/Video Call ──────────────────────────────────────────────────────
   const startCall = (type) => {
     if (!activeChat) return;
     setActiveCall({ type, user: activeChat, status: "calling" });
-    // Simulate connecting after 3s (real WebRTC would go here)
     setTimeout(() => {
       setActiveCall(prev => prev ? { ...prev, status: "connected" } : null);
     }, 3000);
@@ -461,7 +457,6 @@ export default function App() {
 
   const endCall = () => { setActiveCall(null); };
 
-  // ── Voice Note Recording ───────────────────────────────────────────────────
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -512,7 +507,6 @@ export default function App() {
     notify(pinnedChats.includes(userId) ? "Chat unpinned." : "Chat pinned ⭐");
   };
 
-  // Chat row long-press menu actions
   const handleDeleteChat = (userId) => {
     setDeletedChats(p=>[...p, userId]);
     setChatRowMenu(null);
@@ -524,7 +518,6 @@ export default function App() {
     notify("Marked as read.");
   };
 
-  // Pull-to-refresh handlers
   const handlePullStart = (e) => { pullStartY.current = e.touches?.[0]?.clientY ?? 0; };
   const handlePullEnd = async (e) => {
     const dy = (e.changedTouches?.[0]?.clientY ?? 0) - pullStartY.current;
@@ -533,6 +526,17 @@ export default function App() {
       await loadSocial();
       setTimeout(()=>setIsPulling(false), 600);
     }
+  };
+
+  // ── FIX: handle Enter key — send on Enter, new line on Shift+Enter ────────
+  const handleTextareaKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // prevent newline
+      if (input.trim()) {
+        sendMessage(input);
+      }
+    }
+    // Shift+Enter: default textarea behavior adds a newline, no preventDefault needed
   };
 
   const css = `
@@ -553,12 +557,12 @@ export default function App() {
     .msg-in{animation:popIn .2s ease}.screen-enter{animation:fadeUp .3s ease}
     .tab-btn:hover{background:#1A1A26!important}.chat-row:hover{background:#151520!important}
     input::placeholder{color:#4B5563}
+    textarea::placeholder{color:#4B5563}
     .msg-bubble{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
   `;
 
   const filteredMessages = chatSearchQ ? messages.filter(m=>m.type==="text"&&m.text.toLowerCase().includes(chatSearchQ.toLowerCase())) : messages;
 
-  // Sort friends: pinned first, then by unread, filter by search and deleted
   const sortedFriends = [...friends]
     .filter(u => !deletedChats.includes(u.id) && !blockedUsers.includes(u.id))
     .filter(u => chatListSearch.trim() === "" || u.name.toLowerCase().includes(chatListSearch.toLowerCase()) || u.username.toLowerCase().includes(chatListSearch.toLowerCase()))
@@ -566,7 +570,6 @@ export default function App() {
       const ap = pinnedChats.includes(a.id) ? 0 : 1;
       const bp = pinnedChats.includes(b.id) ? 0 : 1;
       if (ap !== bp) return ap - bp;
-      // unread first after pinned
       const aUnread = (lastMsgs[a.id] && !lastMsgs[a.id].seen && lastMsgs[a.id].from_id !== me.id && !markedRead.includes(a.id)) ? 0 : 1;
       const bUnread = (lastMsgs[b.id] && !lastMsgs[b.id].seen && lastMsgs[b.id].from_id !== me.id && !markedRead.includes(b.id)) ? 0 : 1;
       return aUnread - bUnread;
@@ -582,7 +585,6 @@ export default function App() {
     </button>
   );
 
-  // ── APP SHELL: full-height flex column, nothing scrolls except message area
   return (
     <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#0D0D12", height:"100dvh", minHeight:"-webkit-fill-available", width:"100%", maxWidth:"100%", color:"#E2E8F0", display:"flex", flexDirection:"column", position:"fixed", top:0, left:0, right:0, bottom:0, overflow:"hidden" }}>
       <style>{css}</style>
@@ -633,7 +635,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Avatar Overlay — tap avatar in chats list */}
+      {/* Avatar Overlay */}
       {avatarOverlay && (
         <div onClick={()=>setAvatarOverlay(null)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center" }}>
           <div onClick={e=>e.stopPropagation()} style={{ background:"#141420",borderRadius:24,padding:24,width:300,border:"1px solid #2A2A38",animation:"popIn .2s ease" }}>
@@ -800,7 +802,6 @@ export default function App() {
                     <div style={{ fontSize:11,color:isOnline(activeChat)?"#4ADE80":"#6B7280" }}>{isOnline(activeChat)?"Active now":getLastSeen(activeChat)}</div>
                   </div>
                 </div>
-                {/* Call buttons */}
                 <button onClick={()=>startCall("audio")} style={{ background:"#1A1A26",border:"1px solid #2A2A38",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
                   <IcPhone size={18} color="#A78BFA"/>
                 </button>
@@ -824,10 +825,9 @@ export default function App() {
             </div>
           )}
 
-          {/* ── CHAT MESSAGES VIEW — fills remaining space, input stays at bottom ── */}
+          {/* ── CHAT MESSAGES VIEW ── */}
           {view==="chats" && activeChat && chatView==="messages" ? (
             <div style={{ flex:1,display:"flex",flexDirection:"column",minHeight:0,background:currentBg }} onClick={()=>setMsgMenu(null)}>
-              {/* Pinned banner */}
               {pinnedMsgs.length>0 && (
                 <div style={{ padding:"8px 16px",background:"#141420",borderBottom:"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:8,flexShrink:0 }}>
                   <IcPushPin size={14} color="#A78BFA"/>
@@ -837,7 +837,6 @@ export default function App() {
 
               {/* Scrollable messages */}
               <div style={{ flex:1,overflowY:"auto",padding:"12px 12px 8px",display:"flex",flexDirection:"column",gap:2 }}>
-                {/* FIX: show spinner until loaded, then show empty state only if truly no messages */}
                 {!msgsLoaded && (
                   <div style={{ textAlign:"center",color:"#4B5563",marginTop:60 }}>
                     <div style={{ width:24,height:24,border:"2px solid #A78BFA",borderTopColor:"transparent",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto" }} />
@@ -875,7 +874,7 @@ export default function App() {
                           onTouchStart={e=>{swipeStartX.current=e.touches[0].clientX;longPressTimer.current=setTimeout(()=>setMsgMenu({msg}),500);}}
                           onTouchMove={e=>{clearTimeout(longPressTimer.current);handleTouchMove(e);}}
                           onTouchEnd={()=>{clearTimeout(longPressTimer.current);handleTouchEnd(msg);}}
-                          style={{ background:isMe?"linear-gradient(135deg,#9333EA,#7C3AED)":"#1C1C28",color:"#fff",borderRadius:isMe?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px"):(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),padding:msg.type==="image"?4:"11px 15px",fontSize:15,lineHeight:1.55,cursor:"pointer",wordBreak:"break-word" }}>
+                          style={{ background:isMe?"linear-gradient(135deg,#9333EA,#7C3AED)":"#1C1C28",color:"#fff",borderRadius:isMe?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px"):(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),padding:msg.type==="image"?4:"11px 15px",fontSize:15,lineHeight:1.55,cursor:"pointer",wordBreak:"break-word",whiteSpace:"pre-wrap" }}>
                           {msg.type==="image"&&<img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)} style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block",cursor:"pointer" }} />}
                           {msg.type==="file"&&(
                             msg.is_voice ? (
@@ -945,10 +944,9 @@ export default function App() {
                 </div>
               )}
 
-              {/* Input bar — always at bottom */}
-              <div style={{ padding:"10px 12px",borderTop:"1px solid #1A1A26",display:"flex",gap:6,alignItems:"center",background:"#0D0D12",flexShrink:0 }}>
+              {/* ── Input bar ── */}
+              <div style={{ padding:"10px 12px",borderTop:"1px solid #1A1A26",display:"flex",gap:6,alignItems:"flex-end",background:"#0D0D12",flexShrink:0 }}>
                 {isRecording ? (
-                  // ── Voice recording UI ──
                   <>
                     <button onClick={cancelRecording} style={{ background:"#1E1E2A",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}>
                       <IcClose size={18} color="#EF4444"/>
@@ -963,9 +961,22 @@ export default function App() {
                   </>
                 ) : (
                   <>
-                    <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcAttach size={20}/></button>
-                    <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcEmoji size={20} color={showEmoji?"#A78BFA":"#9CA3AF"}/></button>
-                    <textarea value={input} onChange={e=>{setInput(e.target.value);signalTyping();}} placeholder="Message..." rows={1} style={{ flex:1,background:"#1A1A26",borderRadius:18,padding:"11px 16px",fontSize:14,resize:"none",lineHeight:"1.4",maxHeight:120,overflowY:"auto",fontFamily:"'DM Sans',sans-serif" }} onInput={e=>{e.target.style.height="auto";e.target.style.height=Math.min(e.target.scrollHeight,120)+"px";}} />
+                    <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none",flexShrink:0 }}><IcAttach size={20}/></button>
+                    <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none",flexShrink:0 }}><IcEmoji size={20} color={showEmoji?"#A78BFA":"#9CA3AF"}/></button>
+                    {/* ── FIX: use ref, onKeyDown for Enter, onInput to auto-grow ── */}
+                    <textarea
+                      ref={textareaRef}
+                      value={input}
+                      onChange={e => { setInput(e.target.value); signalTyping(); }}
+                      onKeyDown={handleTextareaKeyDown}
+                      placeholder="Message..."
+                      rows={1}
+                      style={{ flex:1, background:"#1A1A26", borderRadius:18, padding:"11px 16px", fontSize:14, resize:"none", lineHeight:"1.4", maxHeight:120, overflowY:"auto", fontFamily:"'DM Sans',sans-serif" }}
+                      onInput={e => {
+                        e.target.style.height = "auto";
+                        e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                      }}
+                    />
                     {input.trim() ? (
                       <button onClick={()=>sendMessage(input)} className="ripple" style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcSend size={18}/></button>
                     ) : (
@@ -979,7 +990,6 @@ export default function App() {
             </div>
 
           ) : (
-            /* ── ALL OTHER VIEWS — scrollable ── */
             <div style={{ flex:1,overflowY:"auto",paddingBottom:16 }}>
 
               {/* Chat Info */}
@@ -1038,15 +1048,12 @@ export default function App() {
                   onTouchStart={handlePullStart}
                   onTouchEnd={handlePullEnd}
                 >
-                  {/* Pull-to-refresh indicator */}
                   {isPulling && (
                     <div style={{ display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 0",gap:8 }}>
                       <div style={{ width:18,height:18,border:"2px solid #A78BFA",borderTopColor:"transparent",borderRadius:"50%",animation:"spin .7s linear infinite" }}/>
                       <span style={{ fontSize:13,color:"#6B7280" }}>Refreshing...</span>
                     </div>
                   )}
-
-                  {/* Chat list search */}
                   <div style={{ padding:"16px 0 12px" }}>
                     <div style={{ display:"flex",alignItems:"center",background:"#1A1A26",borderRadius:14,padding:"10px 14px",gap:10,border:"1px solid #2A2A38" }}>
                       <IcInfoSearch size={16} color="#4B5563"/>
@@ -1054,16 +1061,13 @@ export default function App() {
                       {chatListSearch && <button onClick={()=>setChatListSearch("")} style={{ background:"none",border:"none",padding:0,display:"flex" }}><IcClose size={14} color="#6B7280"/></button>}
                     </div>
                   </div>
-
                   <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:10 }}>Messages</div>
                   {friends.length===0 && <div style={{ textAlign:"center",color:"#4B5563",padding:"40px 0",fontSize:14 }}><div style={{ fontSize:42,marginBottom:12 }}>💬</div>Add friends to start chatting!</div>}
                   {sortedFriends.length===0 && friends.length>0 && chatListSearch && <div style={{ textAlign:"center",color:"#4B5563",padding:"30px 0",fontSize:14 }}>No chats match "{chatListSearch}"</div>}
 
-                  {/* Chat row long-press context menu */}
                   {chatRowMenu && (
                     <div onClick={()=>setChatRowMenu(null)} style={{ position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.5)" }}>
                       <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:"min(280px,90vw)",boxShadow:"0 8px 40px #00000099",border:"1px solid #2A2A38",animation:"popIn .2s ease",zIndex:201 }}>
-                        {/* User info header */}
                         <div style={{ display:"flex",alignItems:"center",gap:12,padding:"14px 18px",borderBottom:"1px solid #2A2A38" }}>
                           <Avatar user={chatRowMenu.user} size={38} showStatus />
                           <div>
@@ -1092,8 +1096,6 @@ export default function App() {
                     const unread = lm && !lm.seen && lm.from_id!==me.id && !isMarkedRead;
                     const time=lm?new Date(lm.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"";
                     const isPinned=pinnedChats.includes(user.id);
-                    // Count unread messages
-                    const unreadCount = unread ? (messages && activeChat?.id === user.id ? 0 : "●") : null;
                     return (
                       <div key={user.id} className="chat-row"
                         onClick={()=>{setActiveChat(user);setChatView("messages");setMarkedRead(p=>p.filter(id=>id!==user.id));}}
@@ -1109,7 +1111,6 @@ export default function App() {
                         onTouchMove={()=>clearTimeout(chatRowLongPress.current)}
                         onContextMenu={e=>{e.preventDefault();setChatRowMenu({user});}}
                         style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:12,position:"relative" }}>
-                        {/* Avatar tap → overlay */}
                         <div onClick={e=>{e.stopPropagation();setAvatarOverlay(user);}} style={{ flexShrink:0,cursor:"pointer" }}>
                           <Avatar user={{...user,online}} size={50} showStatus />
                         </div>

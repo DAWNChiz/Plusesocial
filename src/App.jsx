@@ -55,9 +55,11 @@ const IcPlusCircle = ({size=22,color="#A78BFA"}) => (<svg width={size} height={s
 const IcPhone = ({size=20,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.93 19.79 19.79 0 01.14 1.3 2 2 0 012.11 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.18v2.74z"/></svg>);
 const IcVideoCall = ({size=20,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>);
 const IcMic = ({size=20,color="#E2E8F0"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>);
+const IcMicOff = ({size=20,color="#EF4444"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/><path d="M17 16.95A7 7 0 015 12v-2M19 10v2a7 7 0 01-.09 1.11M12 19v4M8 23h8"/></svg>);
 const IcPhoneOff = ({size=24,color="#EF4444"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07M7.42 7.42A19.5 19.5 0 003.07 9.93 19.79 19.79 0 01.14 1.3a2 2 0 011.97-1.3h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11l-.27.27"/><line x1="23" y1="1" x2="1" y2="23"/></svg>);
 const IcStar = ({size=20,color="#FBBF24",fill="none"}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>);
 
+// ── Avatar ─────────────────────────────────────────────────────────────────
 const Avatar = ({ user, size=42, ring=false, showStatus=false, onClick }) => (
   <div style={{ position:"relative", flexShrink:0, cursor:onClick?"pointer":"default" }} onClick={onClick}>
     {user.photo_url ? (
@@ -130,10 +132,19 @@ export default function App() {
   const [editNickname, setEditNickname] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [, setTick] = useState(0);
+  // NEW: avatar tap overlay + pinned chats
   const [avatarOverlay, setAvatarOverlay] = useState(null);
   const [pinnedChats, setPinnedChats] = useState([]);
   const chatRowLongPress = useRef(null);
-  const [activeCall, setActiveCall] = useState(null);
+  // NEW
+  const [chatListSearch, setChatListSearch] = useState("");
+  const [chatRowMenu, setChatRowMenu] = useState(null); // {user} for long-press options
+  const [deletedChats, setDeletedChats] = useState([]); // locally hidden chats
+  const [markedRead, setMarkedRead] = useState([]); // locally marked-read chat ids
+  const [isPulling, setIsPulling] = useState(false);
+  const pullStartY = useRef(0);
+  // Call & voice note state
+  const [activeCall, setActiveCall] = useState(null); // {type:'audio'|'video', user, status:'calling'|'connected'}
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const mediaRecorderRef = useRef(null);
@@ -149,12 +160,16 @@ export default function App() {
   const heartbeatRef = useRef(null);
   const longPressTimer = useRef(null);
   const swipeStartX = useRef(0);
+  // track unsent message ids to suppress realtime re-insertion
   const unsentIds = useRef(new Set());
 
   const currentBg = CHAT_BGS.find(b=>b.id===chatBg)?.bg || "#0D0D12";
   const notify = (msg, color="#A78BFA") => { setToast({msg,color}); setTimeout(()=>setToast(null),2800); };
 
-  useEffect(() => { const id=setInterval(()=>setTick(t=>t+1),30000); return ()=>clearInterval(id); }, []);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t=>t+1), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({data:{session}}) => {
@@ -260,11 +275,13 @@ export default function App() {
     load(); const id=setInterval(load,5000); return ()=>clearInterval(id);
   }, [me,friends]);
 
+  // ── FIX: loadMessages ignores unsent ids ──────────────────────────────────
   const loadMessages = useCallback(async () => {
     if (!me||!activeChat) return;
     const {data} = await supabase.from("messages").select("*")
       .or(`and(from_id.eq.${me.id},to_id.eq.${activeChat.id}),and(from_id.eq.${activeChat.id},to_id.eq.${me.id})`)
       .order("created_at",{ascending:true});
+    // Filter out any ids that are in the unsent set (deleted but not yet propagated)
     const filtered = (data||[]).filter(m => !unsentIds.current.has(m.id));
     setMessages(filtered);
     setMsgsLoaded(true);
@@ -274,17 +291,23 @@ export default function App() {
 
   useEffect(() => {
     if (!me||!activeChat) return;
-    setMsgsLoaded(false); setMessages([]); unsentIds.current.clear();
+    setMsgsLoaded(false);
+    setMessages([]);
+    unsentIds.current.clear();
     loadMessages();
     realtimeMsgRef.current?.unsubscribe();
     realtimeMsgRef.current = supabase.channel(`msgs:${[me.id,activeChat.id].sort().join("_")}`)
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},(p)=>{
+        // Ignore if this message was locally unsent
         if (p.new?.id && unsentIds.current.has(p.new.id)) return;
         loadMessages();
       })
       .on("postgres_changes",{event:"UPDATE",schema:"public",table:"messages"},()=>loadMessages())
       .on("postgres_changes",{event:"DELETE",schema:"public",table:"messages"},(p)=>{
-        if (p.old?.id) { unsentIds.current.add(p.old.id); setMessages(prev=>prev.filter(m=>m.id!==p.old.id)); }
+        if (p.old?.id) {
+          unsentIds.current.add(p.old.id);
+          setMessages(prev=>prev.filter(m=>m.id!==p.old.id));
+        }
       })
       .subscribe();
     realtimeTypingRef.current?.unsubscribe();
@@ -320,15 +343,20 @@ export default function App() {
     const file=e.target.files[0]; if (!file) return;
     const isImage=file.type.startsWith("image/");
     const reader=new FileReader();
-    reader.onload=async(ev)=>{ await sendMessage(file.name,isImage?"image":"file",{data_url:ev.target.result,file_size:(file.size/1024).toFixed(1)+" KB"}); };
+    reader.onload=async(ev)=>{
+      await sendMessage(file.name,isImage?"image":"file",{data_url:ev.target.result,file_size:(file.size/1024).toFixed(1)+" KB"});
+      notify(isImage?"Photo sent":"File sent");
+    };
     reader.readAsDataURL(file); e.target.value="";
   };
 
+  // ── FIX: unsend — mark id as unsent FIRST, remove from UI, then delete from DB
+  // This prevents the realtime INSERT or re-fetch from bringing it back
   const unsendMessage = async (msgId) => {
-    unsentIds.current.add(msgId);
-    setMessages(p=>p.filter(m=>m.id!==msgId));
+    unsentIds.current.add(msgId);                            // guard against re-fetch
+    setMessages(p=>p.filter(m=>m.id!==msgId));              // remove from UI instantly
     setMsgMenu(null);
-    await supabase.from("messages").delete().eq("id",msgId);
+    await supabase.from("messages").delete().eq("id",msgId); // no from_id filter — delete for both sides
     notify("Message unsent.");
   };
 
@@ -349,9 +377,10 @@ export default function App() {
   };
 
   const pinMessage = (msg) => {
-    const ap = pinnedMsgs.find(m=>m.id===msg.id);
-    setPinnedMsgs(p=>ap?p.filter(m=>m.id!==msg.id):[...p,msg]);
-    setMsgMenu(null); notify(ap?"Unpinned.":"Message pinned");
+    const alreadyPinned = pinnedMsgs.find(m=>m.id===msg.id);
+    setPinnedMsgs(p=>alreadyPinned?p.filter(m=>m.id!==msg.id):[...p,msg]);
+    setMsgMenu(null);
+    notify(alreadyPinned?"Unpinned.":"Message pinned");
   };
 
   const forwardMessage = (msg) => { setMsgMenu(null); setInput(msg.type==="text"?msg.text:""); };
@@ -398,25 +427,41 @@ export default function App() {
   const handleTouchMove = (e) => { const dx=e.touches[0].clientX-swipeStartX.current; if(dx>0&&dx<80) setSwipeX(dx); };
   const handleTouchEnd = (msg) => { if (swipeX>50) setReplyTo(msg); setSwipeX(0); setSwipeReply(null); };
 
+  // ── Prevent browser swipe-back from closing the app ──────────────────────
   useEffect(() => {
+    // Push a state so there's always something to "go back" to
     window.history.pushState({ pulse: true }, "");
-    const onPop = () => {
+    const onPop = (e) => {
+      // Instead of letting browser navigate back, we intercept
       window.history.pushState({ pulse: true }, "");
-      if (activeChat) { setActiveChat(null); setMessages([]); setMsgsLoaded(false); setShowEmoji(false); setPeerTyping(false); setChatView("messages"); setChatSearchOpen(false); setChatSearchQ(""); }
-      else if (fullProfileUser) setFullProfileUser(null);
-      else if (avatarOverlay) setAvatarOverlay(null);
+      // Then handle our own back navigation
+      if (activeChat) {
+        setActiveChat(null); setMessages([]); setMsgsLoaded(false);
+        setShowEmoji(false); setPeerTyping(false);
+        setChatView("messages"); setChatSearchOpen(false); setChatSearchQ("");
+      } else if (fullProfileUser) {
+        setFullProfileUser(null);
+      } else if (avatarOverlay) {
+        setAvatarOverlay(null);
+      }
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, [activeChat, fullProfileUser, avatarOverlay]);
 
+  // ── Audio/Video Call ──────────────────────────────────────────────────────
   const startCall = (type) => {
     if (!activeChat) return;
     setActiveCall({ type, user: activeChat, status: "calling" });
-    setTimeout(() => setActiveCall(prev => prev ? { ...prev, status: "connected" } : null), 3000);
+    // Simulate connecting after 3s (real WebRTC would go here)
+    setTimeout(() => {
+      setActiveCall(prev => prev ? { ...prev, status: "connected" } : null);
+    }, 3000);
   };
-  const endCall = () => setActiveCall(null);
 
+  const endCall = () => { setActiveCall(null); };
+
+  // ── Voice Note Recording ───────────────────────────────────────────────────
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -427,39 +472,73 @@ export default function App() {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         stream.getTracks().forEach(t => t.stop());
         const reader = new FileReader();
-        reader.onload = async ev => { await sendMessage("Voice note", "file", { data_url: ev.target.result, file_size: (blob.size/1024).toFixed(1) + " KB", is_voice: true }); };
+        reader.onload = async ev => {
+          await sendMessage("🎤 Voice note", "file", { data_url: ev.target.result, file_size: (blob.size/1024).toFixed(1) + " KB", is_voice: true });
+        };
         reader.readAsDataURL(blob);
         setRecordSeconds(0);
       };
-      mr.start(); mediaRecorderRef.current = mr; setIsRecording(true);
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setIsRecording(true);
       recordTimerRef.current = setInterval(() => setRecordSeconds(s => s + 1), 1000);
     } catch { notify("Microphone access denied.", "#EF4444"); }
   };
+
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) { mediaRecorderRef.current.stop(); setIsRecording(false); clearInterval(recordTimerRef.current); }
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      clearInterval(recordTimerRef.current);
+    }
   };
+
   const cancelRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.ondataavailable = null; mediaRecorderRef.current.onstop = null;
-      mediaRecorderRef.current.stop(); mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
+      mediaRecorderRef.current.ondataavailable = null;
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
     }
-    setIsRecording(false); setRecordSeconds(0); clearInterval(recordTimerRef.current); audioChunksRef.current = [];
+    setIsRecording(false);
+    setRecordSeconds(0);
+    clearInterval(recordTimerRef.current);
+    audioChunksRef.current = [];
   };
 
   const fmtSecs = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
   const togglePinChat = (userId) => {
     setPinnedChats(p => p.includes(userId) ? p.filter(id=>id!==userId) : [...p, userId]);
-    notify(pinnedChats.includes(userId) ? "Chat unpinned." : "Chat pinned");
+    notify(pinnedChats.includes(userId) ? "Chat unpinned." : "Chat pinned ⭐");
   };
 
-  // ── PTR NOTE: html/body/root has overscroll-behavior-y:auto so the OS can
-  // trigger pull-to-refresh. The .allow-ptr class is applied to non-chat scrollable
-  // areas (Chats list, Friends, Profile). The .block-ptr class is applied to the
-  // chat message area to prevent accidental PTR while scrolling messages.
+  // Chat row long-press menu actions
+  const handleDeleteChat = (userId) => {
+    setDeletedChats(p=>[...p, userId]);
+    setChatRowMenu(null);
+    notify("Chat deleted.");
+  };
+  const handleMarkRead = (userId) => {
+    setMarkedRead(p=>[...p, userId]);
+    setChatRowMenu(null);
+    notify("Marked as read.");
+  };
+
+  // Pull-to-refresh handlers
+  const handlePullStart = (e) => { pullStartY.current = e.touches?.[0]?.clientY ?? 0; };
+  const handlePullEnd = async (e) => {
+    const dy = (e.changedTouches?.[0]?.clientY ?? 0) - pullStartY.current;
+    if (dy > 80) {
+      setIsPulling(true);
+      await loadSocial();
+      setTimeout(()=>setIsPulling(false), 600);
+    }
+  };
+
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap');
     *{box-sizing:border-box;margin:0;padding:0}
-    html,body,#root{height:100%;width:100%;margin:0;padding:0;overflow:hidden;overscroll-behavior-y:auto;}
+    html,body,#root{height:100%;width:100%;margin:0;padding:0;overflow:hidden}
     html{height:-webkit-fill-available}
     body{min-height:-webkit-fill-available}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2A2A38;border-radius:10px}
@@ -475,37 +554,68 @@ export default function App() {
     .tab-btn:hover{background:#1A1A26!important}.chat-row:hover{background:#151520!important}
     input::placeholder{color:#4B5563}
     .msg-bubble{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
-    .allow-ptr{overscroll-behavior-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;}
-    .block-ptr{overscroll-behavior-y:contain;}
   `;
 
   const filteredMessages = chatSearchQ ? messages.filter(m=>m.type==="text"&&m.text.toLowerCase().includes(chatSearchQ.toLowerCase())) : messages;
-  const sortedFriends = [...friends].sort((a,b)=>(pinnedChats.includes(a.id)?0:1)-(pinnedChats.includes(b.id)?0:1));
+
+  // Sort friends: pinned first, then by unread, filter by search and deleted
+  const sortedFriends = [...friends]
+    .filter(u => !deletedChats.includes(u.id) && !blockedUsers.includes(u.id))
+    .filter(u => chatListSearch.trim() === "" || u.name.toLowerCase().includes(chatListSearch.toLowerCase()) || u.username.toLowerCase().includes(chatListSearch.toLowerCase()))
+    .sort((a,b) => {
+      const ap = pinnedChats.includes(a.id) ? 0 : 1;
+      const bp = pinnedChats.includes(b.id) ? 0 : 1;
+      if (ap !== bp) return ap - bp;
+      // unread first after pinned
+      const aUnread = (lastMsgs[a.id] && !lastMsgs[a.id].seen && lastMsgs[a.id].from_id !== me.id && !markedRead.includes(a.id)) ? 0 : 1;
+      const bUnread = (lastMsgs[b.id] && !lastMsgs[b.id].seen && lastMsgs[b.id].from_id !== me.id && !markedRead.includes(b.id)) ? 0 : 1;
+      return aUnread - bUnread;
+    });
 
   const InfoRow = ({IconComp, label, sub, action, red=false, last=false}) => (
     <button onClick={action} style={{ width:"100%",padding:"14px 18px",background:"none",color:red?"#EF4444":"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:last?"none":"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:14,cursor:"pointer",border:"none" }}>
-      <div style={{ width:28,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}><IconComp size={20} color={red?"#EF4444":"#A78BFA"}/></div>
+      <div style={{ width:28,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+        <IconComp size={20} color={red?"#EF4444":"#A78BFA"} />
+      </div>
       <div style={{ flex:1 }}><div>{label}</div>{sub&&<div style={{ fontSize:12,color:"#4B5563",fontWeight:400,marginTop:1 }}>{sub}</div>}</div>
-      <IcChevronRight size={16} color="#4B5563"/>
+      <IcChevronRight size={16} color="#4B5563" />
     </button>
   );
 
+  // ── APP SHELL: full-height flex column, nothing scrolls except message area
   return (
-    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#0D0D12", height:"100dvh", minHeight:"-webkit-fill-available", width:"100%", color:"#E2E8F0", display:"flex", flexDirection:"column", position:"fixed", top:0, left:0, right:0, bottom:0, overflow:"hidden" }}>
+    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#0D0D12", height:"100dvh", minHeight:"-webkit-fill-available", width:"100%", maxWidth:"100%", color:"#E2E8F0", display:"flex", flexDirection:"column", position:"fixed", top:0, left:0, right:0, bottom:0, overflow:"hidden" }}>
       <style>{css}</style>
 
       <input type="file" ref={fileRef} onChange={sendFile} style={{display:"none"}} accept="image/*,application/*" />
       <input type="file" ref={profilePhotoRef} onChange={handleProfilePhotoUpload} style={{display:"none"}} accept="image/*" />
 
-      {/* Call overlay */}
+      {/* ── ACTIVE CALL OVERLAY ── */}
       {activeCall && (
         <div style={{ position:"fixed",inset:0,background:"#0A0A10",zIndex:5000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:24 }}>
-          <div style={{ fontSize:13,color:"#6B7280",fontWeight:600,letterSpacing:1,textTransform:"uppercase" }}>{activeCall.type==="video"?"Video Call":"Audio Call"} · {activeCall.status==="calling"?"Calling...":"Connected"}</div>
+          <div style={{ fontSize:13,color:"#6B7280",fontWeight:600,letterSpacing:1,textTransform:"uppercase" }}>
+            {activeCall.type==="video"?"Video Call":"Audio Call"} · {activeCall.status==="calling"?"Calling...":"Connected"}
+          </div>
           <Avatar user={activeCall.user} size={100} ring />
-          <div style={{ fontWeight:800,fontSize:24 }}>{activeCall.user.name}</div>
-          {activeCall.status==="calling" && <div style={{ display:"flex",gap:6 }}>{[0,1,2].map(i=><span key={i} style={{ width:8,height:8,borderRadius:"50%",background:"#A78BFA",display:"inline-block",animation:`typingBounce 1.2s ${i*0.3}s infinite` }}/>)}</div>}
-          {activeCall.status==="connected" && <div style={{ fontSize:13,color:"#4ADE80",fontWeight:600 }}>● Live</div>}
-          <button onClick={endCall} style={{ width:66,height:66,borderRadius:"50%",background:"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",border:"none",marginTop:20 }}><IcPhoneOff size={28} color="#fff"/></button>
+          <div style={{ fontWeight:800,fontSize:24,color:"#E2E8F0" }}>{activeCall.user.name}</div>
+          {activeCall.status==="calling" && (
+            <div style={{ display:"flex",gap:6 }}>
+              {[0,1,2].map(i=><span key={i} style={{ width:8,height:8,borderRadius:"50%",background:"#A78BFA",display:"inline-block",animation:`typingBounce 1.2s ${i*0.3}s infinite` }}/>)}
+            </div>
+          )}
+          {activeCall.status==="connected" && (
+            <div style={{ fontSize:13,color:"#4ADE80",fontWeight:600 }}>● Live</div>
+          )}
+          {activeCall.type==="video" && activeCall.status==="connected" && (
+            <div style={{ width:280,height:180,borderRadius:18,background:"linear-gradient(135deg,#1a1a2e,#16213e)",display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid #2A2A38" }}>
+              <div style={{ color:"#4B5563",fontSize:13 }}>Camera preview</div>
+            </div>
+          )}
+          <div style={{ display:"flex",gap:32,marginTop:20 }}>
+            <button onClick={endCall} style={{ width:66,height:66,borderRadius:"50%",background:"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",border:"none",boxShadow:"0 4px 20px #EF444466" }}>
+              <IcPhoneOff size={28} color="#fff"/>
+            </button>
+          </div>
         </div>
       )}
 
@@ -523,7 +633,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Avatar overlay */}
+      {/* Avatar Overlay — tap avatar in chats list */}
       {avatarOverlay && (
         <div onClick={()=>setAvatarOverlay(null)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center" }}>
           <div onClick={e=>e.stopPropagation()} style={{ background:"#141420",borderRadius:24,padding:24,width:300,border:"1px solid #2A2A38",animation:"popIn .2s ease" }}>
@@ -536,15 +646,21 @@ export default function App() {
               </div>
             </div>
             <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
-              <button onClick={()=>{setAvatarOverlay(null);setFullProfileUser(avatarOverlay);}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"12px 16px",borderRadius:14,fontSize:14,fontWeight:700,textAlign:"left",display:"flex",alignItems:"center",gap:10,border:"none" }}><IcUser size={18} color="#fff"/> View Profile</button>
-              <button onClick={()=>{setAvatarOverlay(null);setActiveChat(avatarOverlay);setView("chats");setChatView("messages");}} style={{ background:"#1E1E2A",color:"#E2E8F0",padding:"12px 16px",borderRadius:14,fontSize:14,fontWeight:600,textAlign:"left",display:"flex",alignItems:"center",gap:10,border:"1px solid #2A2A38" }}><IcMessage size={18} color="#A78BFA"/> Message</button>
-              <button onClick={()=>{togglePinChat(avatarOverlay.id);setAvatarOverlay(null);}} style={{ background:"#1E1E2A",color:"#E2E8F0",padding:"12px 16px",borderRadius:14,fontSize:14,fontWeight:600,textAlign:"left",display:"flex",alignItems:"center",gap:10,border:"1px solid #2A2A38" }}><IcStar size={18} color="#FBBF24" fill={pinnedChats.includes(avatarOverlay.id)?"#FBBF24":"none"}/> {pinnedChats.includes(avatarOverlay.id)?"Unpin favourite":"Pin as favourite"}</button>
+              <button onClick={()=>{setAvatarOverlay(null);setFullProfileUser(avatarOverlay);}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"12px 16px",borderRadius:14,fontSize:14,fontWeight:700,textAlign:"left",display:"flex",alignItems:"center",gap:10 }}>
+                <IcUser size={18} color="#fff"/> View Profile
+              </button>
+              <button onClick={()=>{setAvatarOverlay(null);setActiveChat(avatarOverlay);setView("chats");setChatView("messages");}} style={{ background:"#1E1E2A",color:"#E2E8F0",padding:"12px 16px",borderRadius:14,fontSize:14,fontWeight:600,textAlign:"left",display:"flex",alignItems:"center",gap:10,border:"1px solid #2A2A38" }}>
+                <IcMessage size={18} color="#A78BFA"/> Message
+              </button>
+              <button onClick={()=>{togglePinChat(avatarOverlay.id);setAvatarOverlay(null);}} style={{ background:"#1E1E2A",color:"#E2E8F0",padding:"12px 16px",borderRadius:14,fontSize:14,fontWeight:600,textAlign:"left",display:"flex",alignItems:"center",gap:10,border:"1px solid #2A2A38" }}>
+                <IcStar size={18} color="#FBBF24" fill={pinnedChats.includes(avatarOverlay.id)?"#FBBF24":"none"}/> {pinnedChats.includes(avatarOverlay.id)?"Unpin favourite":"Pin as favourite"}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Full profile */}
+      {/* Full Profile Screen */}
       {fullProfileUser && (
         <div style={{ position:"fixed",inset:0,background:"#0D0D12",zIndex:300,overflowY:"auto",animation:"slideIn .25s ease" }}>
           <div style={{ padding:"14px 20px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1A1A26",position:"sticky",top:0,background:"#0D0D12",zIndex:10 }}>
@@ -561,7 +677,9 @@ export default function App() {
                 <div style={{ color:"#6B7280",fontSize:14,marginTop:2 }}>@{fullProfileUser.username}</div>
                 {nickname && <div style={{ color:"#A78BFA",fontSize:13,marginTop:2 }}>Nickname: {nickname}</div>}
               </div>
-              <button onClick={()=>{setFullProfileUser(null);setActiveChat(fullProfileUser);setView("chats");setChatView("messages");}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"10px 20px",borderRadius:24,fontSize:13,fontWeight:700,border:"none",display:"flex",alignItems:"center",gap:8 }}><IcMessage size={16} color="#fff"/> Message</button>
+              <button onClick={()=>{setFullProfileUser(null);setActiveChat(fullProfileUser);setView("chats");setChatView("messages");}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"10px 20px",borderRadius:24,fontSize:13,fontWeight:700,border:"none",display:"flex",alignItems:"center",gap:8 }}>
+                <IcMessage size={16} color="#fff"/> Message
+              </button>
             </div>
             <div style={{ display:"inline-flex",alignItems:"center",gap:6,background:isOnline(fullProfileUser)?"#0f2d1a":"#1a1a26",padding:"6px 14px",borderRadius:20,marginBottom:16,border:`1px solid ${isOnline(fullProfileUser)?"#4ADE8033":"#2A2A38"}` }}>
               <span style={{ width:8,height:8,borderRadius:"50%",background:isOnline(fullProfileUser)?"#4ADE80":"#4B5563",display:"inline-block" }} />
@@ -596,7 +714,7 @@ export default function App() {
         </div>
       )}
 
-      {/* BG picker */}
+      {/* BG Picker */}
       {showBgPicker && (
         <div onClick={()=>setShowBgPicker(false)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:250,display:"flex",alignItems:"flex-end" }}>
           <div onClick={e=>e.stopPropagation()} style={{ width:"100%",background:"#0F0F1A",borderRadius:"24px 24px 0 0",padding:"20px 20px 40px",border:"1px solid #1E1E2A" }}>
@@ -614,18 +732,18 @@ export default function App() {
         </div>
       )}
 
-      {/* Auth screens */}
+      {/* ── AUTH SCREENS ── */}
       {screen==="splash" && (
-        <div className="screen-enter" style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32 }}>
+        <div className="screen-enter" style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:32 }}>
           <div style={{ width:80,height:80,borderRadius:24,background:"linear-gradient(135deg,#A78BFA,#6366F1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:38,marginBottom:24,boxShadow:"0 0 60px #A78BFA55" }}>⚡</div>
           <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:36,letterSpacing:"-2px",background:"linear-gradient(135deg,#A78BFA,#6366F1,#EC4899)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>pulse</div>
           <div style={{ color:"#4B5563",fontSize:14,marginTop:8,marginBottom:48 }}>Real connections. Live.</div>
-          <button className="ripple" onClick={()=>setScreen("signup")} style={{ width:"100%",padding:15,borderRadius:18,background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",fontWeight:700,fontSize:16,marginBottom:12,border:"none" }}>Create Account</button>
+          <button className="ripple" onClick={()=>setScreen("signup")} style={{ width:"100%",padding:15,borderRadius:18,background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",fontWeight:700,fontSize:16,marginBottom:12 }}>Create Account</button>
           <button className="ripple" onClick={()=>setScreen("login")} style={{ width:"100%",padding:15,borderRadius:18,background:"#1A1A26",color:"#A78BFA",fontWeight:700,fontSize:16,border:"1px solid #2A2A38" }}>Sign In</button>
         </div>
       )}
       {screen==="signup" && (
-        <div className="screen-enter" style={{ flex:1,padding:"48px 28px 32px",display:"flex",flexDirection:"column",overflowY:"auto" }}>
+        <div className="screen-enter" style={{ flex:1,padding:"48px 28px 32px",display:"flex",flexDirection:"column",minHeight:"100vh",overflowY:"auto" }}>
           <button onClick={()=>setScreen("splash")} style={{ background:"none",border:"none",padding:6,marginBottom:18,alignSelf:"flex-start" }}><IcBack size={24} color="#6B7280"/></button>
           <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:28,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6 }}>Join Pulse</div>
           <div style={{ color:"#4B5563",fontSize:14,marginBottom:32 }}>Create your account to get started.</div>
@@ -642,12 +760,12 @@ export default function App() {
             </div>
           </div>
           {authErr && <div style={{ color:"#F87171",fontSize:13,marginBottom:14,fontWeight:600 }}>⚠ {authErr}</div>}
-          <button className="ripple" onClick={doSignup} disabled={loading} style={{ width:"100%",padding:15,borderRadius:18,background:loading?"#2A2A38":"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",fontWeight:800,fontSize:15,border:"none" }}>{loading?"Creating...":"Create Account →"}</button>
+          <button className="ripple" onClick={doSignup} disabled={loading} style={{ width:"100%",padding:15,borderRadius:18,background:loading?"#2A2A38":"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",fontWeight:800,fontSize:15 }}>{loading?"Creating...":"Create Account →"}</button>
           <div style={{ textAlign:"center",marginTop:20,color:"#4B5563",fontSize:13 }}>Already have an account?{" "}<span onClick={()=>{setScreen("login");setAuthErr("");}} style={{ color:"#A78BFA",fontWeight:700,cursor:"pointer" }}>Sign In</span></div>
         </div>
       )}
       {screen==="login" && (
-        <div className="screen-enter" style={{ flex:1,padding:"48px 28px 32px",display:"flex",flexDirection:"column" }}>
+        <div className="screen-enter" style={{ flex:1,padding:"48px 28px 32px",display:"flex",flexDirection:"column",minHeight:"100vh" }}>
           <button onClick={()=>setScreen("splash")} style={{ background:"none",border:"none",padding:6,marginBottom:18,alignSelf:"flex-start" }}><IcBack size={24} color="#6B7280"/></button>
           <div style={{ fontFamily:"'DM Mono',monospace",fontWeight:700,fontSize:28,letterSpacing:"-1px",background:"linear-gradient(135deg,#A78BFA,#6366F1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6 }}>Welcome back</div>
           <div style={{ color:"#4B5563",fontSize:14,marginBottom:32 }}>Sign in to continue.</div>
@@ -658,15 +776,15 @@ export default function App() {
             </div>
           ))}
           {authErr && <div style={{ color:"#F87171",fontSize:13,marginBottom:14,fontWeight:600 }}>⚠ {authErr}</div>}
-          <button className="ripple" onClick={doLogin} disabled={loading} style={{ width:"100%",padding:15,borderRadius:18,background:loading?"#2A2A38":"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",fontWeight:800,fontSize:15,marginTop:8,border:"none" }}>{loading?"Signing in...":"Sign In →"}</button>
+          <button className="ripple" onClick={doLogin} disabled={loading} style={{ width:"100%",padding:15,borderRadius:18,background:loading?"#2A2A38":"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",fontWeight:800,fontSize:15,marginTop:8 }}>{loading?"Signing in...":"Sign In →"}</button>
           <div style={{ textAlign:"center",marginTop:20,color:"#4B5563",fontSize:13 }}>New here?{" "}<span onClick={()=>{setScreen("signup");setAuthErr("");}} style={{ color:"#A78BFA",fontWeight:700,cursor:"pointer" }}>Create account</span></div>
         </div>
       )}
 
-      {/* Home */}
+      {/* ── HOME ── */}
       {screen==="home" && me && (
         <>
-          {/* Top bar */}
+          {/* STICKY Top Bar */}
           <div style={{ padding:"12px 16px",borderBottom:"1px solid #1A1A26",display:"flex",alignItems:"center",gap:8,background:"#0D0D12",flexShrink:0,zIndex:20 }}>
             {activeChat && view==="chats" ? (
               <button onClick={()=>{setActiveChat(null);setMessages([]);setMsgsLoaded(false);setShowEmoji(false);setPeerTyping(false);setChatView("messages");setChatSearchOpen(false);setChatSearchQ("");}} style={{ background:"none",border:"none",padding:6,display:"flex",alignItems:"center",flexShrink:0 }}><IcBack size={24} color="#A78BFA"/></button>
@@ -682,8 +800,13 @@ export default function App() {
                     <div style={{ fontSize:11,color:isOnline(activeChat)?"#4ADE80":"#6B7280" }}>{isOnline(activeChat)?"Active now":getLastSeen(activeChat)}</div>
                   </div>
                 </div>
-                <button onClick={()=>startCall("audio")} style={{ background:"#1A1A26",border:"1px solid #2A2A38",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}><IcPhone size={18} color="#A78BFA"/></button>
-                <button onClick={()=>startCall("video")} style={{ background:"#1A1A26",border:"1px solid #2A2A38",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}><IcVideoCall size={18} color="#A78BFA"/></button>
+                {/* Call buttons */}
+                <button onClick={()=>startCall("audio")} style={{ background:"#1A1A26",border:"1px solid #2A2A38",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+                  <IcPhone size={18} color="#A78BFA"/>
+                </button>
+                <button onClick={()=>startCall("video")} style={{ background:"#1A1A26",border:"1px solid #2A2A38",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+                  <IcVideoCall size={18} color="#A78BFA"/>
+                </button>
               </>
             ) : (
               <div style={{ display:"flex",alignItems:"center",gap:10 }}>
@@ -693,6 +816,7 @@ export default function App() {
             )}
           </div>
 
+          {/* Chat search bar */}
           {activeChat && chatSearchOpen && (
             <div style={{ padding:"8px 16px",borderBottom:"1px solid #1A1A26",background:"#0D0D12",flexShrink:0,display:"flex",gap:8,alignItems:"center" }}>
               <input value={chatSearchQ} onChange={e=>setChatSearchQ(e.target.value)} placeholder="Search messages..." style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"9px 16px",fontSize:14,border:"1px solid #2A2A38" }} autoFocus />
@@ -700,20 +824,33 @@ export default function App() {
             </div>
           )}
 
-          {/* Chat messages — fixed layout, block PTR */}
+          {/* ── CHAT MESSAGES VIEW — fills remaining space, input stays at bottom ── */}
           {view==="chats" && activeChat && chatView==="messages" ? (
             <div style={{ flex:1,display:"flex",flexDirection:"column",minHeight:0,background:currentBg }} onClick={()=>setMsgMenu(null)}>
+              {/* Pinned banner */}
               {pinnedMsgs.length>0 && (
                 <div style={{ padding:"8px 16px",background:"#141420",borderBottom:"1px solid #1E1E2A",display:"flex",alignItems:"center",gap:8,flexShrink:0 }}>
                   <IcPushPin size={14} color="#A78BFA"/>
                   <span style={{ fontSize:13,color:"#C4C4D4",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1 }}>{pinnedMsgs[pinnedMsgs.length-1]?.text}</span>
                 </div>
               )}
-              {/* Messages area — block-ptr prevents accidental PTR while scrolling chat */}
-              <div className="block-ptr" style={{ flex:1,overflowY:"auto",padding:"12px 12px 8px",display:"flex",flexDirection:"column",gap:2 }}>
-                {!msgsLoaded && <div style={{ textAlign:"center",marginTop:60 }}><div style={{ width:24,height:24,border:"2px solid #A78BFA",borderTopColor:"transparent",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto" }} /></div>}
-                {msgsLoaded && filteredMessages.length===0 && !chatSearchQ && <div style={{ textAlign:"center",color:"#4B5563",marginTop:60,fontSize:14 }}><div style={{ fontSize:44,marginBottom:12 }}>👋</div>Say hello to {activeChat.name}!</div>}
-                {msgsLoaded && chatSearchQ && filteredMessages.length===0 && <div style={{ textAlign:"center",color:"#4B5563",marginTop:40,fontSize:14 }}>No messages found.</div>}
+
+              {/* Scrollable messages */}
+              <div style={{ flex:1,overflowY:"auto",padding:"12px 12px 8px",display:"flex",flexDirection:"column",gap:2 }}>
+                {/* FIX: show spinner until loaded, then show empty state only if truly no messages */}
+                {!msgsLoaded && (
+                  <div style={{ textAlign:"center",color:"#4B5563",marginTop:60 }}>
+                    <div style={{ width:24,height:24,border:"2px solid #A78BFA",borderTopColor:"transparent",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto" }} />
+                  </div>
+                )}
+                {msgsLoaded && filteredMessages.length===0 && !chatSearchQ && (
+                  <div style={{ textAlign:"center",color:"#4B5563",marginTop:60,fontSize:14 }}>
+                    <div style={{ fontSize:44,marginBottom:12 }}>👋</div>Say hello to {activeChat.name}!
+                  </div>
+                )}
+                {msgsLoaded && chatSearchQ && filteredMessages.length===0 && (
+                  <div style={{ textAlign:"center",color:"#4B5563",marginTop:40,fontSize:14 }}>No messages found.</div>
+                )}
                 {filteredMessages.map((msg,i)=>{
                   const isMe=msg.from_id===me.id;
                   const isLast=i===filteredMessages.length-1;
@@ -740,15 +877,17 @@ export default function App() {
                           onTouchEnd={()=>{clearTimeout(longPressTimer.current);handleTouchEnd(msg);}}
                           style={{ background:isMe?"linear-gradient(135deg,#9333EA,#7C3AED)":"#1C1C28",color:"#fff",borderRadius:isMe?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px"):(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),padding:msg.type==="image"?4:"11px 15px",fontSize:15,lineHeight:1.55,cursor:"pointer",wordBreak:"break-word" }}>
                           {msg.type==="image"&&<img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)} style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block",cursor:"pointer" }} />}
-                          {msg.type==="file"&&(msg.is_voice?(
-                            <div style={{ display:"flex",alignItems:"center",gap:10,minWidth:180 }}>
-                              <IcMic size={20} color={isMe?"#fff":"#A78BFA"}/>
-                              <audio controls src={msg.data_url} style={{ height:32,flex:1,maxWidth:160 }}/>
-                              <span style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</span>
-                            </div>
-                          ):(
-                            <div style={{ display:"flex",alignItems:"center",gap:10 }}><IcFile size={24} color="#A78BFA"/><div><div style={{ fontWeight:600,fontSize:13 }}>{msg.text}</div><div style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</div></div></div>
-                          ))}
+                          {msg.type==="file"&&(
+                            msg.is_voice ? (
+                              <div style={{ display:"flex",alignItems:"center",gap:10,minWidth:180 }}>
+                                <IcMic size={20} color={isMe?"#fff":"#A78BFA"}/>
+                                <audio controls src={msg.data_url} style={{ height:32,flex:1,filter:"invert(0)",maxWidth:160 }}/>
+                                <span style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</span>
+                              </div>
+                            ) : (
+                              <div style={{ display:"flex",alignItems:"center",gap:10 }}><IcFile size={24} color="#A78BFA"/><div><div style={{ fontWeight:600,fontSize:13 }}>{msg.text}</div><div style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</div></div></div>
+                            )
+                          )}
                           {msg.type==="text"&&(isEditing?(
                             <div onClick={e=>e.stopPropagation()}>
                               <input value={editingMsg.text} onChange={e=>setEditingMsg(p=>({...p,text:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")saveEditedMsg();if(e.key==="Escape")setEditingMsg(null);}} autoFocus style={{ background:"rgba(255,255,255,0.15)",border:"none",borderRadius:8,padding:"4px 8px",color:"#fff",fontSize:14,width:"100%",outline:"none" }} />
@@ -770,9 +909,10 @@ export default function App() {
                 <div ref={chatEndRef} />
               </div>
 
+              {/* Context menu */}
               {msgMenu&&(
                 <div onClick={()=>setMsgMenu(null)} style={{ position:"fixed",inset:0,zIndex:100 }}>
-                  <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:"80px",left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:"min(260px,90vw)",boxShadow:"0 8px 40px #00000088",border:"1px solid #2A2A38",zIndex:101 }}>
+                  <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:"80px",left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:"min(260px, 90vw)",boxShadow:"0 8px 40px #00000088",border:"1px solid #2A2A38",zIndex:101 }}>
                     <div style={{ display:"flex",justifyContent:"space-around",padding:"12px 16px",borderBottom:"1px solid #2A2A38" }}>
                       {REACT_EMOJIS.map(e=><span key={e} onClick={()=>toggleReaction(msgMenu.msg,e)} style={{ fontSize:24,cursor:"pointer" }}>{e}</span>)}
                     </div>
@@ -805,25 +945,33 @@ export default function App() {
                 </div>
               )}
 
+              {/* Input bar — always at bottom */}
               <div style={{ padding:"10px 12px",borderTop:"1px solid #1A1A26",display:"flex",gap:6,alignItems:"center",background:"#0D0D12",flexShrink:0 }}>
                 {isRecording ? (
+                  // ── Voice recording UI ──
                   <>
-                    <button onClick={cancelRecording} style={{ background:"#1E1E2A",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcClose size={18} color="#EF4444"/></button>
+                    <button onClick={cancelRecording} style={{ background:"#1E1E2A",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}>
+                      <IcClose size={18} color="#EF4444"/>
+                    </button>
                     <div style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"11px 16px",display:"flex",alignItems:"center",gap:10 }}>
                       <span style={{ width:8,height:8,borderRadius:"50%",background:"#EF4444",display:"inline-block",animation:"typingBounce 1s infinite" }}/>
                       <span style={{ fontSize:14,color:"#E2E8F0",fontWeight:600 }}>Recording {fmtSecs(recordSeconds)}</span>
                     </div>
-                    <button onClick={stopRecording} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",borderRadius:"50%",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcCheck size={22} color="#fff"/></button>
+                    <button onClick={stopRecording} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",borderRadius:"50%",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}>
+                      <IcCheck size={22} color="#fff"/>
+                    </button>
                   </>
                 ) : (
                   <>
                     <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcAttach size={20}/></button>
                     <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcEmoji size={20} color={showEmoji?"#A78BFA":"#9CA3AF"}/></button>
-                    <input value={input} onChange={e=>{setInput(e.target.value);signalTyping();}} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage(input)} placeholder="Message..." style={{ flex:1,background:"#1A1A26",borderRadius:24,padding:"11px 16px",fontSize:14 }} />
+                    <textarea value={input} onChange={e=>{setInput(e.target.value);signalTyping();}} placeholder="Message..." rows={1} style={{ flex:1,background:"#1A1A26",borderRadius:18,padding:"11px 16px",fontSize:14,resize:"none",lineHeight:"1.4",maxHeight:120,overflowY:"auto",fontFamily:"'DM Sans',sans-serif" }} onInput={e=>{e.target.style.height="auto";e.target.style.height=Math.min(e.target.scrollHeight,120)+"px";}} />
                     {input.trim() ? (
                       <button onClick={()=>sendMessage(input)} className="ripple" style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcSend size={18}/></button>
                     ) : (
-                      <button onTouchStart={startRecording} onMouseDown={startRecording} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}><IcMic size={20} color="#A78BFA"/></button>
+                      <button onTouchStart={startRecording} onMouseDown={startRecording} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none" }}>
+                        <IcMic size={20} color="#A78BFA"/>
+                      </button>
                     )}
                   </>
                 )}
@@ -831,10 +979,10 @@ export default function App() {
             </div>
 
           ) : (
-            /* All other views — allow-ptr enables pull-to-refresh */
-            <div className="allow-ptr" style={{ flex:1,overflowY:"auto",paddingBottom:16 }}>
+            /* ── ALL OTHER VIEWS — scrollable ── */
+            <div style={{ flex:1,overflowY:"auto",paddingBottom:16 }}>
 
-              {/* Chat info */}
+              {/* Chat Info */}
               {view==="chats" && activeChat && chatView==="info" && (
                 <div>
                   <div style={{ height:120,background:`linear-gradient(135deg,${activeChat.color}66,${activeChat.color}22)`,display:"flex",alignItems:"flex-end",padding:"0 20px 16px" }}>
@@ -885,21 +1033,83 @@ export default function App() {
 
               {/* Chats list */}
               {view==="chats" && !activeChat && (
-                <div style={{ padding:"16px 20px 6px" }}>
-                  <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:14 }}>Messages</div>
+                <div
+                  style={{ padding:"0 20px 6px" }}
+                  onTouchStart={handlePullStart}
+                  onTouchEnd={handlePullEnd}
+                >
+                  {/* Pull-to-refresh indicator */}
+                  {isPulling && (
+                    <div style={{ display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 0",gap:8 }}>
+                      <div style={{ width:18,height:18,border:"2px solid #A78BFA",borderTopColor:"transparent",borderRadius:"50%",animation:"spin .7s linear infinite" }}/>
+                      <span style={{ fontSize:13,color:"#6B7280" }}>Refreshing...</span>
+                    </div>
+                  )}
+
+                  {/* Chat list search */}
+                  <div style={{ padding:"16px 0 12px" }}>
+                    <div style={{ display:"flex",alignItems:"center",background:"#1A1A26",borderRadius:14,padding:"10px 14px",gap:10,border:"1px solid #2A2A38" }}>
+                      <IcInfoSearch size={16} color="#4B5563"/>
+                      <input value={chatListSearch} onChange={e=>setChatListSearch(e.target.value)} placeholder="Search chats..." style={{ flex:1,fontSize:14,color:"#E2E8F0",background:"none" }} />
+                      {chatListSearch && <button onClick={()=>setChatListSearch("")} style={{ background:"none",border:"none",padding:0,display:"flex" }}><IcClose size={14} color="#6B7280"/></button>}
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:10 }}>Messages</div>
                   {friends.length===0 && <div style={{ textAlign:"center",color:"#4B5563",padding:"40px 0",fontSize:14 }}><div style={{ fontSize:42,marginBottom:12 }}>💬</div>Add friends to start chatting!</div>}
+                  {sortedFriends.length===0 && friends.length>0 && chatListSearch && <div style={{ textAlign:"center",color:"#4B5563",padding:"30px 0",fontSize:14 }}>No chats match "{chatListSearch}"</div>}
+
+                  {/* Chat row long-press context menu */}
+                  {chatRowMenu && (
+                    <div onClick={()=>setChatRowMenu(null)} style={{ position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.5)" }}>
+                      <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:"min(280px,90vw)",boxShadow:"0 8px 40px #00000099",border:"1px solid #2A2A38",animation:"popIn .2s ease",zIndex:201 }}>
+                        {/* User info header */}
+                        <div style={{ display:"flex",alignItems:"center",gap:12,padding:"14px 18px",borderBottom:"1px solid #2A2A38" }}>
+                          <Avatar user={chatRowMenu.user} size={38} showStatus />
+                          <div>
+                            <div style={{ fontWeight:700,fontSize:14 }}>{chatRowMenu.user.name}</div>
+                            <div style={{ fontSize:12,color:"#6B7280" }}>@{chatRowMenu.user.username}</div>
+                          </div>
+                        </div>
+                        {[
+                          { label: pinnedChats.includes(chatRowMenu.user.id) ? "Unpin chat" : "Pin chat", Icon: IcPushPin, color:"#E2E8F0", action:()=>{togglePinChat(chatRowMenu.user.id);setChatRowMenu(null);} },
+                          { label: "Mark as read", Icon: IcDoubleCheck, color:"#E2E8F0", action:()=>handleMarkRead(chatRowMenu.user.id) },
+                          { label: "View profile", Icon: IcUser, color:"#E2E8F0", action:()=>{setFullProfileUser(chatRowMenu.user);setChatRowMenu(null);} },
+                          { label: "Delete chat", Icon: IcUnsend, color:"#EF4444", action:()=>handleDeleteChat(chatRowMenu.user.id) },
+                        ].map((opt,i,arr)=>(
+                          <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"14px 18px",background:"none",color:opt.color,fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #2A2A38":"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",border:"none" }}>
+                            <opt.Icon size={20} color={opt.color}/>{opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {sortedFriends.map(user=>{
-                    const lm=lastMsgs[user.id]; const online=isOnline(user); const unread=lm&&!lm.seen&&lm.from_id!==me.id;
+                    const lm=lastMsgs[user.id];
+                    const online=isOnline(user);
+                    const isMarkedRead = markedRead.includes(user.id);
+                    const unread = lm && !lm.seen && lm.from_id!==me.id && !isMarkedRead;
                     const time=lm?new Date(lm.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"";
                     const isPinned=pinnedChats.includes(user.id);
-                    if (blockedUsers.includes(user.id)) return null;
+                    // Count unread messages
+                    const unreadCount = unread ? (messages && activeChat?.id === user.id ? 0 : "●") : null;
                     return (
                       <div key={user.id} className="chat-row"
-                        onClick={()=>{setActiveChat(user);setChatView("messages");}}
-                        onTouchStart={()=>{chatRowLongPress.current=setTimeout(()=>togglePinChat(user.id),600);}}
-                        onTouchEnd={()=>clearTimeout(chatRowLongPress.current)}
+                        onClick={()=>{setActiveChat(user);setChatView("messages");setMarkedRead(p=>p.filter(id=>id!==user.id));}}
+                        onTouchStart={(e)=>{
+                          pullStartY.current = e.touches[0].clientY;
+                          chatRowLongPress.current=setTimeout(()=>{setChatRowMenu({user});},550);
+                        }}
+                        onTouchEnd={(e)=>{
+                          clearTimeout(chatRowLongPress.current);
+                          const dy = e.changedTouches[0].clientY - pullStartY.current;
+                          if (dy > 80 && !chatRowMenu) { setIsPulling(true); loadSocial().then(()=>setTimeout(()=>setIsPulling(false),600)); }
+                        }}
                         onTouchMove={()=>clearTimeout(chatRowLongPress.current)}
+                        onContextMenu={e=>{e.preventDefault();setChatRowMenu({user});}}
                         style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:12,position:"relative" }}>
+                        {/* Avatar tap → overlay */}
                         <div onClick={e=>{e.stopPropagation();setAvatarOverlay(user);}} style={{ flexShrink:0,cursor:"pointer" }}>
                           <Avatar user={{...user,online}} size={50} showStatus />
                         </div>
@@ -909,14 +1119,18 @@ export default function App() {
                               {isPinned && <IcStar size={12} color="#FBBF24" fill="#FBBF24"/>}
                               {user.name}
                             </div>
-                            <div style={{ fontSize:11,color:"#4B5563" }}>{time}</div>
+                            <div style={{ fontSize:11,color:unread?"#A78BFA":"#4B5563",fontWeight:unread?700:400 }}>{time}</div>
                           </div>
                           <div style={{ fontSize:13,color:unread?"#A78BFA":"#6B7280",marginTop:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontWeight:unread?600:400 }}>
                             {mutedUsers.includes(user.id)&&<IcBellOff size={11} color="#4B5563"/>}
-                            {" "}{lm?(lm.type==="image"?"Photo":lm.type==="file"?lm.text:(lm.from_id===me.id?`You: ${lm.text}`:lm.text)):"Say hello!"}
+                            {" "}{lm?(lm.type==="image"?"📷 Photo":lm.type==="file"?"📎 File":(lm.from_id===me.id?`You: ${lm.text}`:lm.text)):"Say hello!"}
                           </div>
                         </div>
-                        {unread&&<div style={{ width:10,height:10,borderRadius:"50%",background:"#A78BFA",flexShrink:0 }} />}
+                        {unread && (
+                          <div style={{ minWidth:20,height:20,borderRadius:10,background:"#A78BFA",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 5px" }}>
+                            <span style={{ fontSize:11,fontWeight:800,color:"#fff" }}>●</span>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -925,7 +1139,7 @@ export default function App() {
 
               {/* Friends */}
               {view==="friends" && (
-                <div style={{ padding:"16px 20px" }}>
+                <div style={{ padding:"16px 20px" }} onTouchStart={handlePullStart} onTouchEnd={handlePullEnd}>
                   <div style={{ marginBottom:20 }}>
                     <div style={{ fontSize:11,fontWeight:700,color:"#4B5563",letterSpacing:1,textTransform:"uppercase",marginBottom:8 }}>Find People</div>
                     <div style={{ display:"flex",gap:8 }}>
@@ -937,11 +1151,21 @@ export default function App() {
                   {searchResults.map(user=>{
                     const isFriend=friends.some(f=>f.id===user.id); const sent=sentReqs.includes(user.id);
                     return (
-                      <div key={user.id} style={{ background:"#141420",borderRadius:16,padding:"14px 16px",display:"flex",alignItems:"center",gap:14,marginBottom:12,border:"1px solid #2A2A38",cursor:"pointer" }} onClick={()=>setFullProfileUser(user)}>
+                      <div key={user.id} style={{ background:"#141420",borderRadius:16,padding:"14px 16px",display:"flex",alignItems:"center",gap:14,marginBottom:12,border:"1px solid #2A2A38",cursor:"pointer" }}
+                        onClick={()=>setFullProfileUser(user)}>
                         <Avatar user={{...user,online:isOnline(user)}} size={50} showStatus />
-                        <div style={{ flex:1 }}><div style={{ fontWeight:700,fontSize:14 }}>{user.name}</div><div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div><div style={{ fontSize:12,color:"#9CA3AF",marginTop:2 }}>{user.bio}</div></div>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontWeight:700,fontSize:14 }}>{user.name}</div>
+                          <div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div>
+                          <div style={{ fontSize:12,color:"#9CA3AF",marginTop:2 }}>{user.bio}</div>
+                        </div>
                         <div onClick={e=>e.stopPropagation()}>
-                          {isFriend?<span style={{ color:"#4ADE80",fontSize:12,fontWeight:700 }}>Friends</span>:sent?<span style={{ color:"#6B7280",fontSize:12,fontWeight:700 }}>Sent</span>:<button className="ripple" onClick={e=>{e.stopPropagation();sendFriendReq(user);}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 16px",borderRadius:20,fontSize:12,fontWeight:700,border:"none",display:"flex",alignItems:"center",gap:6 }}><IcPlusCircle size={14} color="#fff"/> Add</button>}
+                          {isFriend
+                            ? <span style={{ color:"#4ADE80",fontSize:12,fontWeight:700 }}>Friends</span>
+                            : sent
+                              ? <span style={{ color:"#6B7280",fontSize:12,fontWeight:700 }}>Sent</span>
+                              : <button className="ripple" onClick={e=>{e.stopPropagation();sendFriendReq(user);}} style={{ background:"linear-gradient(135deg,#A78BFA,#6366F1)",color:"#fff",padding:"8px 16px",borderRadius:20,fontSize:12,fontWeight:700,border:"none",display:"flex",alignItems:"center",gap:6 }}><IcPlusCircle size={14} color="#fff"/> Add</button>
+                          }
                         </div>
                       </div>
                     );
@@ -967,8 +1191,11 @@ export default function App() {
                     {friends.map(user=>{
                       const online=isOnline(user);
                       return (
-                        <div key={user.id} className="chat-row" style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:10 }} onClick={()=>{setActiveChat(user);setView("chats");setChatView("messages");}}>
-                          <div onClick={e=>{e.stopPropagation();setAvatarOverlay(user);}} style={{ flexShrink:0 }}><Avatar user={{...user,online}} size={46} showStatus /></div>
+                        <div key={user.id} className="chat-row" style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:10 }}
+                          onClick={()=>{setActiveChat(user);setView("chats");setChatView("messages");}}>
+                          <div onClick={e=>{e.stopPropagation();setAvatarOverlay(user);}} style={{ flexShrink:0 }}>
+                            <Avatar user={{...user,online}} size={46} showStatus />
+                          </div>
                           <div style={{ flex:1 }}>
                             <div style={{ fontWeight:600,fontSize:14 }}>{user.name}</div>
                             <div style={{ fontSize:12,color:"#6B7280" }}>@{user.username}</div>
@@ -983,7 +1210,7 @@ export default function App() {
 
               {/* Profile */}
               {view==="profile" && (
-                <div style={{ padding:"20px" }}>
+                <div style={{ padding:"20px" }} onTouchStart={handlePullStart} onTouchEnd={handlePullEnd}>
                   <div style={{ background:`linear-gradient(135deg,${me.color}22,#141420)`,borderRadius:20,padding:24,marginBottom:20,border:`1px solid ${me.color}33`,textAlign:"center" }}>
                     <div style={{ position:"relative",display:"inline-block" }}>
                       <Avatar user={me} size={88} ring />
@@ -1037,7 +1264,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Bottom nav */}
+          {/* Bottom Nav */}
           {!(view==="chats"&&activeChat&&chatView==="messages") && (
             <div style={{ flexShrink:0,background:"#0D0D12",borderTop:"1px solid #1A1A26",display:"flex",justifyContent:"space-around",padding:"10px 0 16px",zIndex:10 }}>
               {[

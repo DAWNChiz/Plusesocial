@@ -417,8 +417,9 @@ export default function App() {
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap');
     *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%;height:-webkit-fill-available}
-    #root{height:100dvh;height:-webkit-fill-available;display:flex;flex-direction:column}
+    html,body,#root{height:100%;width:100%;margin:0;padding:0;overflow:hidden}
+    html{height:-webkit-fill-available}
+    body{min-height:-webkit-fill-available}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2A2A38;border-radius:10px}
     input,textarea{outline:none;border:none;background:none;font-family:inherit;color:inherit}
     button{cursor:pointer;border:none;font-family:inherit}
@@ -455,14 +456,14 @@ export default function App() {
 
   // ── APP SHELL: full-height flex column, nothing scrolls except message area
   return (
-    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#0D0D12", height:"100dvh", minHeight:"-webkit-fill-available", color:"#E2E8F0", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
+    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#0D0D12", height:"100dvh", minHeight:"-webkit-fill-available", width:"100%", maxWidth:"100%", color:"#E2E8F0", display:"flex", flexDirection:"column", position:"fixed", top:0, left:0, right:0, bottom:0, overflow:"hidden" }}>
       <style>{css}</style>
 
       <input type="file" ref={fileRef} onChange={sendFile} style={{display:"none"}} accept="image/*,application/*" />
       <input type="file" ref={profilePhotoRef} onChange={handleProfilePhotoUpload} style={{display:"none"}} accept="image/*" />
 
       {/* Toast */}
-      {toast && <div style={{ position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:toast.color,color:"#fff",padding:"10px 22px",borderRadius:28,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:`0 4px 24px ${toast.color}66`,animation:"popIn .2s ease",whiteSpace:"nowrap" }}>{toast.msg}</div>}
+      {toast && <div style={{ position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:toast.color,color:"#fff",padding:"10px 22px",borderRadius:28,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:`0 4px 24px ${toast.color}66`,animation:"popIn .2s ease",whiteSpace:"nowrap",maxWidth:"90vw",textAlign:"center" }}>{toast.msg}</div>}
 
       {/* Lightbox */}
       {lightbox && (
@@ -559,7 +560,7 @@ export default function App() {
       {/* BG Picker */}
       {showBgPicker && (
         <div onClick={()=>setShowBgPicker(false)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:250,display:"flex",alignItems:"flex-end" }}>
-          <div onClick={e=>e.stopPropagation()} style={{ width:"100%",maxWidth:480,margin:"0 auto",background:"#0F0F1A",borderRadius:"24px 24px 0 0",padding:"20px 20px 40px",border:"1px solid #1E1E2A" }}>
+          <div onClick={e=>e.stopPropagation()} style={{ width:"100%",background:"#0F0F1A",borderRadius:"24px 24px 0 0",padding:"20px 20px 40px",border:"1px solid #1E1E2A" }}>
             <div style={{ width:40,height:4,background:"#2A2A38",borderRadius:4,margin:"0 auto 20px" }} />
             <div style={{ fontWeight:700,fontSize:16,marginBottom:16 }}>Chat Background</div>
             <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10 }}>
@@ -735,7 +736,7 @@ export default function App() {
               {/* Context menu */}
               {msgMenu&&(
                 <div onClick={()=>setMsgMenu(null)} style={{ position:"fixed",inset:0,zIndex:100 }}>
-                  <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:"80px",left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:260,boxShadow:"0 8px 40px #00000088",border:"1px solid #2A2A38",zIndex:101 }}>
+                  <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:"80px",left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:"min(260px, 90vw)",boxShadow:"0 8px 40px #00000088",border:"1px solid #2A2A38",zIndex:101 }}>
                     <div style={{ display:"flex",justifyContent:"space-around",padding:"12px 16px",borderBottom:"1px solid #2A2A38" }}>
                       {REACT_EMOJIS.map(e=><span key={e} onClick={()=>toggleReaction(msgMenu.msg,e)} style={{ fontSize:24,cursor:"pointer" }}>{e}</span>)}
                     </div>

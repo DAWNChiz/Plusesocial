@@ -487,37 +487,198 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, [activeChat, fullProfileUser, avatarOverlay]);
 
-  const startCall = (type) => {
-    if (!activeChat) return;
-    setActiveCall({ type, user: activeChat, status: "calling" });
-    setTimeout(() => {
-      setActiveCall(prev => prev ? { ...prev, status: "connected" } : null);
-    }, 3000);
+  // ── WebRTC refs ──────────────────────────────────────────────────────────
+  const pcRef = useRef(null);
+  const localStreamRef = useRef(null);
+  const remoteStreamRef = useRef(null);
+  const remoteAudioRef = useRef(null);
+  const callChannelRef = useRef(null);
+  const callIdRef = useRef(null);
+
+  const STUN = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
+
+  const cleanupCall = async () => {
+    pcRef.current?.close(); pcRef.current = null;
+    localStreamRef.current?.getTracks().forEach(t => t.stop()); localStreamRef.current = null;
+    callChannelRef.current?.unsubscribe(); callChannelRef.current = null;
+    if (callIdRef.current) {
+      await supabase.from("calls").delete().eq("id", callIdRef.current);
+      callIdRef.current = null;
+    }
+    setActiveCall(null);
   };
 
-  const endCall = () => { setActiveCall(null); };
+  const endCall = async () => { await cleanupCall(); };
+
+  // Listen for incoming calls
+  useEffect(() => {
+    if (!me) return;
+    const ch = supabase.channel(`incoming:${me.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "calls", filter: `to_id=eq.${me.id}` }, async (p) => {
+        const call = p.new;
+        if (!call?.offer) return;
+        // Show incoming call UI
+        const callerData = friends.find(f => f.id === call.from_id);
+        if (!callerData) return;
+        setActiveCall({ type: call.type||"audio", user: callerData, status: "incoming", callId: call.id, offer: call.offer });
+      })
+      .subscribe();
+    return () => ch.unsubscribe();
+  }, [me, friends]);
+
+  // Watch for answer when we are the caller
+  useEffect(() => {
+    if (!activeCall || activeCall.status !== "calling" || !callIdRef.current) return;
+    const ch = supabase.channel(`answer:${callIdRef.current}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "calls", filter: `id=eq.${callIdRef.current}` }, async (p) => {
+        const updated = p.new;
+        if (updated.answer && pcRef.current && pcRef.current.signalingState !== "stable") {
+          try {
+            await pcRef.current.setRemoteDescription(JSON.parse(updated.answer));
+            setActiveCall(prev => prev ? { ...prev, status: "connected" } : null);
+          } catch(e) { console.error("setRemoteDesc error", e); }
+        }
+        // Apply ICE candidates from callee
+        if (updated.callee_ice) {
+          try {
+            const candidates = JSON.parse(updated.callee_ice);
+            for (const c of candidates) await pcRef.current?.addIceCandidate(new RTCIceCandidate(c));
+          } catch(e) {}
+        }
+      })
+      .subscribe();
+    return () => ch.unsubscribe();
+  }, [activeCall?.status, activeCall?.callId]);
+
+  const startCall = async (type) => {
+    if (!activeChat) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === "video" });
+      localStreamRef.current = stream;
+      const pc = new RTCPeerConnection(STUN);
+      pcRef.current = pc;
+      stream.getTracks().forEach(t => pc.addTrack(t, stream));
+      const iceCandidates = [];
+      pc.onicecandidate = e => { if (e.candidate) iceCandidates.push(e.candidate.toJSON()); };
+      pc.ontrack = e => {
+        if (remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0];
+      };
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "connected") setActiveCall(prev => prev ? { ...prev, status: "connected" } : null);
+        if (["disconnected","failed","closed"].includes(pc.connectionState)) cleanupCall();
+      };
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      // Wait a moment to gather ICE candidates
+      await new Promise(r => setTimeout(r, 1000));
+      const { data: callRow } = await supabase.from("calls").insert({
+        from_id: me.id, to_id: activeChat.id, type,
+        offer: JSON.stringify(pc.localDescription),
+        caller_ice: JSON.stringify(iceCandidates),
+        status: "calling"
+      }).select().single();
+      callIdRef.current = callRow?.id;
+      setActiveCall({ type, user: activeChat, status: "calling" });
+    } catch(err) {
+      notify("Could not access microphone/camera.", "#EF4444");
+      console.error(err);
+    }
+  };
+
+  const answerCall = async () => {
+    if (!activeCall?.offer) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: activeCall.type === "video" });
+      localStreamRef.current = stream;
+      const pc = new RTCPeerConnection(STUN);
+      pcRef.current = pc;
+      stream.getTracks().forEach(t => pc.addTrack(t, stream));
+      const iceCandidates = [];
+      pc.onicecandidate = e => { if (e.candidate) iceCandidates.push(e.candidate.toJSON()); };
+      pc.ontrack = e => {
+        if (remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0];
+      };
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "connected") setActiveCall(prev => prev ? { ...prev, status: "connected" } : null);
+        if (["disconnected","failed","closed"].includes(pc.connectionState)) cleanupCall();
+      };
+      await pc.setRemoteDescription(JSON.parse(activeCall.offer));
+      // Apply caller ICE candidates
+      const { data: callRow } = await supabase.from("calls").select("caller_ice").eq("id", activeCall.callId).single();
+      if (callRow?.caller_ice) {
+        try {
+          const cands = JSON.parse(callRow.caller_ice);
+          for (const c of cands) await pc.addIceCandidate(new RTCIceCandidate(c));
+        } catch(e) {}
+      }
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await new Promise(r => setTimeout(r, 800));
+      await supabase.from("calls").update({
+        answer: JSON.stringify(pc.localDescription),
+        callee_ice: JSON.stringify(iceCandidates),
+        status: "connected"
+      }).eq("id", activeCall.callId);
+      callIdRef.current = activeCall.callId;
+      setActiveCall(prev => prev ? { ...prev, status: "connected" } : null);
+    } catch(err) {
+      notify("Could not answer call.", "#EF4444");
+      console.error(err);
+      cleanupCall();
+    }
+  };
+
+  const declineCall = async () => {
+    if (activeCall?.callId) {
+      await supabase.from("calls").update({ status: "declined" }).eq("id", activeCall.callId);
+    }
+    setActiveCall(null);
+  };
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
+      // Try opus/webm first, fall back to whatever is supported
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
+        : MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "";
+      const mr = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       audioChunksRef.current = [];
-      mr.ondataavailable = e => audioChunksRef.current.push(e.data);
+      mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       mr.onstop = async () => {
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || "audio/webm" });
         stream.getTracks().forEach(t => t.stop());
-        const reader = new FileReader();
-        reader.onload = async ev => {
-          await sendMessage("🎤 Voice note", "file", { data_url: ev.target.result, file_size: (blob.size/1024).toFixed(1) + " KB", is_voice: true });
-        };
-        reader.readAsDataURL(blob);
+        if (blob.size === 0) { notify("Recording was empty.", "#EF4444"); setRecordSeconds(0); return; }
+        notify("Sending voice note...", "#A78BFA");
+        // Upload to Supabase Storage bucket "voice-notes"
+        const ext = (mr.mimeType||"audio/webm").includes("mp4") ? "mp4" : "webm";
+        const path = `${me.id}/${Date.now()}.${ext}`;
+        const { data: uploaded, error: upErr } = await supabase.storage
+          .from("voice-notes")
+          .upload(path, blob, { contentType: mr.mimeType || "audio/webm", upsert: false });
+        if (upErr) {
+          // Fallback: send as base64 if storage fails (small recordings only)
+          if (blob.size < 500000) {
+            const reader = new FileReader();
+            reader.onload = async ev => {
+              await sendMessage("🎤 Voice note", "voice", { data_url: ev.target.result, file_size: (blob.size/1024).toFixed(1)+" KB", duration: recordSeconds });
+            };
+            reader.readAsDataURL(blob);
+          } else {
+            notify("Failed to send voice note.", "#EF4444");
+          }
+          setRecordSeconds(0); return;
+        }
+        const { data: urlData } = supabase.storage.from("voice-notes").getPublicUrl(path);
+        await sendMessage("🎤 Voice note", "voice", { data_url: urlData.publicUrl, file_size: (blob.size/1024).toFixed(1)+" KB", duration: recordSeconds });
         setRecordSeconds(0);
       };
-      mr.start();
+      mr.start(200); // collect data every 200ms
       mediaRecorderRef.current = mr;
       setIsRecording(true);
       recordTimerRef.current = setInterval(() => setRecordSeconds(s => s + 1), 1000);
-    } catch { notify("Microphone access denied.", "#EF4444"); }
+    } catch(err) { notify("Microphone access denied.", "#EF4444"); console.error(err); }
   };
 
   const stopRecording = () => {
@@ -627,29 +788,59 @@ export default function App() {
 
       {/* ── ACTIVE CALL OVERLAY ── */}
       {activeCall && (
-        <div style={{ position:"fixed",inset:0,background:"#0A0A10",zIndex:5000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:24 }}>
-          <div style={{ fontSize:13,color:"#6B7280",fontWeight:600,letterSpacing:1,textTransform:"uppercase" }}>
-            {activeCall.type==="video"?"Video Call":"Audio Call"} · {activeCall.status==="calling"?"Calling...":"Connected"}
+        <div style={{ position:"fixed",inset:0,background:"linear-gradient(160deg,#0a0a18,#130a2e)",zIndex:5000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20 }}>
+          {/* Hidden audio element for remote stream */}
+          <audio ref={remoteAudioRef} autoPlay playsInline style={{ display:"none" }} />
+          <div style={{ fontSize:12,color:"#6B7280",fontWeight:700,letterSpacing:2,textTransform:"uppercase" }}>
+            {activeCall.type==="video"?"Video Call":"Audio Call"}
           </div>
-          <Avatar user={activeCall.user} size={100} ring />
-          <div style={{ fontWeight:800,fontSize:24,color:"#E2E8F0" }}>{activeCall.user.name}</div>
+          <Avatar user={activeCall.user} size={110} ring />
+          <div style={{ fontWeight:800,fontSize:26,color:"#E2E8F0",marginTop:4 }}>{activeCall.user.name}</div>
+
+          {/* Status */}
           {activeCall.status==="calling" && (
-            <div style={{ display:"flex",gap:6 }}>
-              {[0,1,2].map(i=><span key={i} style={{ width:8,height:8,borderRadius:"50%",background:"#A78BFA",display:"inline-block",animation:`typingBounce 1.2s ${i*0.3}s infinite` }}/>)}
+            <div style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:10 }}>
+              <div style={{ fontSize:14,color:"#A78BFA",fontWeight:600 }}>Calling...</div>
+              <div style={{ display:"flex",gap:6 }}>
+                {[0,1,2].map(i=><span key={i} style={{ width:8,height:8,borderRadius:"50%",background:"#A78BFA",display:"inline-block",animation:`typingBounce 1.2s ${i*0.3}s infinite` }}/>)}
+              </div>
             </div>
+          )}
+          {activeCall.status==="incoming" && (
+            <div style={{ fontSize:14,color:"#4ADE80",fontWeight:600 }}>Incoming {activeCall.type==="video"?"video":"audio"} call...</div>
           )}
           {activeCall.status==="connected" && (
-            <div style={{ fontSize:13,color:"#4ADE80",fontWeight:600 }}>● Live</div>
-          )}
-          {activeCall.type==="video" && activeCall.status==="connected" && (
-            <div style={{ width:280,height:180,borderRadius:18,background:"linear-gradient(135deg,#1a1a2e,#16213e)",display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid #2A2A38" }}>
-              <div style={{ color:"#4B5563",fontSize:13 }}>Camera preview</div>
+            <div style={{ display:"flex",alignItems:"center",gap:6 }}>
+              <span style={{ width:8,height:8,borderRadius:"50%",background:"#4ADE80",display:"inline-block",animation:"typingBounce 2s infinite" }}/>
+              <span style={{ fontSize:14,color:"#4ADE80",fontWeight:700 }}>Connected</span>
             </div>
           )}
-          <div style={{ display:"flex",gap:32,marginTop:20 }}>
-            <button onClick={endCall} style={{ width:66,height:66,borderRadius:"50%",background:"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",border:"none",boxShadow:"0 4px 20px #EF444466" }}>
-              <IcPhoneOff size={28} color="#fff"/>
-            </button>
+
+          {/* Action buttons */}
+          <div style={{ display:"flex",gap:24,marginTop:32 }}>
+            {activeCall.status==="incoming" ? (
+              <>
+                <div style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:8 }}>
+                  <button onClick={declineCall} style={{ width:66,height:66,borderRadius:"50%",background:"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",border:"none",boxShadow:"0 4px 24px #EF444466" }}>
+                    <IcPhoneOff size={28} color="#fff"/>
+                  </button>
+                  <span style={{ fontSize:11,color:"#6B7280",fontWeight:600 }}>Decline</span>
+                </div>
+                <div style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:8 }}>
+                  <button onClick={answerCall} style={{ width:66,height:66,borderRadius:"50%",background:"linear-gradient(135deg,#4ADE80,#22C55E)",display:"flex",alignItems:"center",justifyContent:"center",border:"none",boxShadow:"0 4px 24px #4ADE8066" }}>
+                    <IcPhone size={28} color="#fff"/>
+                  </button>
+                  <span style={{ fontSize:11,color:"#4ADE80",fontWeight:600 }}>Answer</span>
+                </div>
+              </>
+            ) : (
+              <div style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:8 }}>
+                <button onClick={endCall} style={{ width:66,height:66,borderRadius:"50%",background:"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",border:"none",boxShadow:"0 4px 24px #EF444466" }}>
+                  <IcPhoneOff size={28} color="#fff"/>
+                </button>
+                <span style={{ fontSize:11,color:"#EF4444",fontWeight:600 }}>End Call</span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -909,16 +1100,19 @@ export default function App() {
                           onTouchEnd={()=>{clearTimeout(longPressTimer.current);handleTouchEnd(msg);}}
                           style={{ background:msgMenu?.msg?.id===msg.id?(isMe?"linear-gradient(135deg,#7C3AED,#5B21B6)":"#2A2A3A"):isMe?"linear-gradient(135deg,#9333EA,#7C3AED)":"#1C1C28",color:"#fff",borderRadius:isMe?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px"):(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),padding:msg.type==="image"?4:"11px 15px",fontSize:15,lineHeight:1.55,cursor:"pointer",wordBreak:"break-word",whiteSpace:"pre-wrap",transition:"background .15s",transform:msgMenu?.msg?.id===msg.id?"scale(1.02)":"scale(1)" }}>
                           {msg.type==="image"&&<img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)} style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block",cursor:"pointer" }} />}
-                          {msg.type==="file"&&(
-                            msg.is_voice ? (
-                              <div style={{ display:"flex",alignItems:"center",gap:10,minWidth:180 }}>
-                                <IcMic size={20} color={isMe?"#fff":"#A78BFA"}/>
-                                <audio controls src={msg.data_url} style={{ height:32,flex:1,filter:"invert(0)",maxWidth:160 }}/>
-                                <span style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</span>
+                          {msg.type==="voice"&&(
+                            <div style={{ display:"flex",alignItems:"center",gap:10,minWidth:200,maxWidth:260 }}>
+                              <div style={{ width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+                                <IcMic size={18} color="#fff"/>
                               </div>
-                            ) : (
-                              <div style={{ display:"flex",alignItems:"center",gap:10 }}><IcFile size={24} color="#A78BFA"/><div><div style={{ fontWeight:600,fontSize:13 }}>{msg.text}</div><div style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</div></div></div>
-                            )
+                              <div style={{ flex:1,display:"flex",flexDirection:"column",gap:4 }}>
+                                <audio controls src={msg.data_url} style={{ width:"100%",height:28,opacity:0.9 }} preload="metadata"/>
+                                <div style={{ fontSize:10,opacity:0.6 }}>{msg.duration?`${Math.floor(msg.duration/60)}:${String(msg.duration%60).padStart(2,"0")}`:""} · {msg.file_size}</div>
+                              </div>
+                            </div>
+                          )}
+                          {msg.type==="file"&&(
+                            <div style={{ display:"flex",alignItems:"center",gap:10 }}><IcFile size={24} color="#A78BFA"/><div><div style={{ fontWeight:600,fontSize:13 }}>{msg.text}</div><div style={{ fontSize:11,opacity:.65 }}>{msg.file_size}</div></div></div>
                           )}
                           {msg.type==="text"&&(isEditing?(
                             <div onClick={e=>e.stopPropagation()}>

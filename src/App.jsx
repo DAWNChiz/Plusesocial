@@ -127,6 +127,7 @@ export default function App() {
   const [chatBg, setChatBg] = useState("default");
   const [showBgPicker, setShowBgPicker] = useState(false);
   const [swipeReply, setSwipeReply] = useState(null);
+  const [menuPos, setMenuPos] = useState({x:0,y:0});
   const [swipeX, setSwipeX] = useState(0);
   const [nickname, setNickname] = useState("");
   const [editNickname, setEditNickname] = useState(false);
@@ -596,12 +597,14 @@ export default function App() {
     .filter(u => !deletedChats.includes(u.id) && !blockedUsers.includes(u.id))
     .filter(u => chatListSearch.trim() === "" || u.name.toLowerCase().includes(chatListSearch.toLowerCase()) || u.username.toLowerCase().includes(chatListSearch.toLowerCase()))
     .sort((a,b) => {
+      // Pinned always on top
       const ap = pinnedChats.includes(a.id) ? 0 : 1;
       const bp = pinnedChats.includes(b.id) ? 0 : 1;
       if (ap !== bp) return ap - bp;
-      const aUnread = (lastMsgs[a.id] && !lastMsgs[a.id].seen && lastMsgs[a.id].from_id !== me.id && !markedRead.includes(a.id)) ? 0 : 1;
-      const bUnread = (lastMsgs[b.id] && !lastMsgs[b.id].seen && lastMsgs[b.id].from_id !== me.id && !markedRead.includes(b.id)) ? 0 : 1;
-      return aUnread - bUnread;
+      // Within same pin group: sort by latest message time descending (newest first)
+      const aTime = lastMsgs[a.id]?.created_at ? new Date(lastMsgs[a.id].created_at).getTime() : 0;
+      const bTime = lastMsgs[b.id]?.created_at ? new Date(lastMsgs[b.id].created_at).getTime() : 0;
+      return bTime - aTime;
     });
 
   const InfoRow = ({IconComp, label, sub, action, red=false, last=false}) => (
@@ -899,8 +902,8 @@ export default function App() {
                         {msg.reply_to_id && <div style={{ fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:3,textAlign:isMe?"right":"left" }}>{isMe?"You replied":"Replied to you"}</div>}
                         {msg.reply_to_id && <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:14,padding:"7px 12px",marginBottom:3,fontSize:13,color:"#9CA3AF",maxWidth:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",border:"1px solid rgba(255,255,255,0.08)" }}>{msg.reply_text}</div>}
                         <div className="msg-bubble"
-                          onContextMenu={e=>{e.preventDefault();setMsgMenu({msg});}}
-                          onTouchStart={e=>{swipeStartX.current=e.touches[0].clientX;longPressTimer.current=setTimeout(()=>setMsgMenu({msg}),500);}}
+                          onContextMenu={e=>{e.preventDefault();setMenuPos({x:e.clientX,y:e.clientY});setMsgMenu({msg});}}
+                          onTouchStart={e=>{swipeStartX.current=e.touches[0].clientX;const t=e.touches[0];longPressTimer.current=setTimeout(()=>{setMenuPos({x:t.clientX,y:t.clientY});setMsgMenu({msg});},500);}}
                           onTouchMove={e=>{clearTimeout(longPressTimer.current);handleTouchMove(e);}}
                           onTouchEnd={()=>{clearTimeout(longPressTimer.current);handleTouchEnd(msg);}}
                           style={{ background:isMe?"linear-gradient(135deg,#9333EA,#7C3AED)":"#1C1C28",color:"#fff",borderRadius:isMe?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px"):(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),padding:msg.type==="image"?4:"11px 15px",fontSize:15,lineHeight:1.55,cursor:"pointer",wordBreak:"break-word",whiteSpace:"pre-wrap" }}>
@@ -940,7 +943,7 @@ export default function App() {
               {/* Context menu */}
               {msgMenu&&(
                 <div onClick={()=>setMsgMenu(null)} style={{ position:"fixed",inset:0,zIndex:100 }}>
-                  <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:"80px",left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:"min(260px, 90vw)",boxShadow:"0 8px 40px #00000088",border:"1px solid #2A2A38",zIndex:101 }}>
+                  <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",top:Math.min(menuPos.y+8, window.innerHeight-380),left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:"min(280px, 90vw)",boxShadow:"0 8px 40px #00000099",border:"1px solid #2A2A38",zIndex:101,maxHeight:"80vh",overflowY:"auto" }}>
                     <div style={{ display:"flex",justifyContent:"space-around",padding:"12px 16px",borderBottom:"1px solid #2A2A38" }}>
                       {REACT_EMOJIS.map(e=><span key={e} onClick={()=>toggleReaction(msgMenu.msg,e)} style={{ fontSize:24,cursor:"pointer" }}>{e}</span>)}
                     </div>

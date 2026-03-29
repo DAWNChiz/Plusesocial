@@ -293,10 +293,19 @@ export default function App() {
     realtimeMsgRef.current?.unsubscribe();
     realtimeMsgRef.current = supabase.channel(`msgs:${[me.id,activeChat.id].sort().join("_")}`)
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},(p)=>{
-        if (p.new?.id && unsentIds.current.has(p.new.id)) return;
-        loadMessages();
+        if (!p.new?.id) return;
+        if (unsentIds.current.has(p.new.id)) return;
+        const isOurs=(p.new.from_id===me.id&&p.new.to_id===activeChat.id)||(p.new.from_id===activeChat.id&&p.new.to_id===me.id);
+        if (!isOurs) return;
+        setMessages(prev=>{
+          if (prev.find(m=>m.id===p.new.id)) return prev;
+          return [...prev, p.new];
+        });
       })
-      .on("postgres_changes",{event:"UPDATE",schema:"public",table:"messages"},()=>loadMessages())
+      .on("postgres_changes",{event:"UPDATE",schema:"public",table:"messages"},(p)=>{
+        if (p.new?.id && unsentIds.current.has(p.new.id)) return;
+        setMessages(prev=>prev.map(m=>m.id===p.new?.id?{...m,...p.new}:m));
+      })
       .on("postgres_changes",{event:"DELETE",schema:"public",table:"messages"},(p)=>{
         if (p.old?.id) {
           unsentIds.current.add(p.old.id);
@@ -310,7 +319,7 @@ export default function App() {
         setPeerTyping(Date.now()-new Date(p.new?.updated_at).getTime()<3000);
       }).subscribe();
     return ()=>{ realtimeMsgRef.current?.unsubscribe(); realtimeTypingRef.current?.unsubscribe(); };
-  }, [me,activeChat,loadMessages]);
+  }, [me,activeChat]); // loadMessages removed from deps — no longer called inside subscription
 
   useEffect(()=>{ chatEndRef.current?.scrollIntoView({behavior:"smooth"}); },[messages,peerTyping]);
 
@@ -528,16 +537,7 @@ export default function App() {
     }
   };
 
-  // ── FIX: handle Enter key — send on Enter, new line on Shift+Enter ────────
-  const handleTextareaKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault(); // prevent newline
-      if (input.trim()) {
-        sendMessage(input);
-      }
-    }
-    // Shift+Enter: default textarea behavior adds a newline, no preventDefault needed
-  };
+
 
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap');
@@ -963,14 +963,13 @@ export default function App() {
                   <>
                     <button onClick={()=>fileRef.current.click()} style={{ background:"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none",flexShrink:0 }}><IcAttach size={20}/></button>
                     <button onClick={()=>setShowEmoji(p=>!p)} style={{ background:showEmoji?"#2A1F44":"#1A1A26",borderRadius:"50%",width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"none",flexShrink:0 }}><IcEmoji size={20} color={showEmoji?"#A78BFA":"#9CA3AF"}/></button>
-                    {/* ── FIX: use ref, onKeyDown for Enter, onInput to auto-grow ── */}
                     <textarea
                       ref={textareaRef}
                       value={input}
                       onChange={e => { setInput(e.target.value); signalTyping(); }}
-                      onKeyDown={handleTextareaKeyDown}
                       placeholder="Message..."
                       rows={1}
+                      enterKeyHint="enter"
                       style={{ flex:1, background:"#1A1A26", borderRadius:18, padding:"11px 16px", fontSize:14, resize:"none", lineHeight:"1.4", maxHeight:120, overflowY:"auto", fontFamily:"'DM Sans',sans-serif" }}
                       onInput={e => {
                         e.target.style.height = "auto";

@@ -288,7 +288,7 @@ export default function App() {
     if (!me||!activeChat) return;
     setMsgsLoaded(false);
     setMessages([]);
-    unsentIds.current.clear();
+    // Do NOT clear unsentIds here — that would allow deleted msgs to reappear on re-fetch
     loadMessages();
     realtimeMsgRef.current?.unsubscribe();
     realtimeMsgRef.current = supabase.channel(`msgs:${[me.id,activeChat.id].sort().join("_")}`)
@@ -319,7 +319,7 @@ export default function App() {
         setPeerTyping(Date.now()-new Date(p.new?.updated_at).getTime()<3000);
       }).subscribe();
     return ()=>{ realtimeMsgRef.current?.unsubscribe(); realtimeTypingRef.current?.unsubscribe(); };
-  }, [me,activeChat]); // loadMessages removed from deps — no longer called inside subscription
+  }, [me,activeChat,loadMessages]);
 
   useEffect(()=>{ chatEndRef.current?.scrollIntoView({behavior:"smooth"}); },[messages,peerTyping]);
 
@@ -364,11 +364,20 @@ export default function App() {
   };
 
   const unsendMessage = async (msgId) => {
+    // Add to unsent set FIRST so any re-fetch filters it out
     unsentIds.current.add(msgId);
     setMessages(p=>p.filter(m=>m.id!==msgId));
     setMsgMenu(null);
-    await supabase.from("messages").delete().eq("id",msgId);
-    notify("Message unsent.");
+    // Use from_id filter so RLS allows it (policy: sender can only delete their own)
+    const { error } = await supabase.from("messages").delete().eq("id",msgId).eq("from_id",me.id);
+    if (error) {
+      // Delete failed — remove from unsent set and restore message
+      unsentIds.current.delete(msgId);
+      notify("Could not unsend message.","#EF4444");
+      loadMessages(); // re-sync
+    } else {
+      notify("Message unsent.");
+    }
   };
 
   const saveEditedMsg = async () => {

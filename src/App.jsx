@@ -128,6 +128,7 @@ export default function App() {
   const [showBgPicker, setShowBgPicker] = useState(false);
   const [swipeReply, setSwipeReply] = useState(null);
   const [menuPos, setMenuPos] = useState({x:0,y:0});
+  const [chatRowMenuPos, setChatRowMenuPos] = useState({top:0,left:0});
   const [swipeX, setSwipeX] = useState(0);
   const [nickname, setNickname] = useState("");
   const [editNickname, setEditNickname] = useState(false);
@@ -902,11 +903,11 @@ export default function App() {
                         {msg.reply_to_id && <div style={{ fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:3,textAlign:isMe?"right":"left" }}>{isMe?"You replied":"Replied to you"}</div>}
                         {msg.reply_to_id && <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:14,padding:"7px 12px",marginBottom:3,fontSize:13,color:"#9CA3AF",maxWidth:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",border:"1px solid rgba(255,255,255,0.08)" }}>{msg.reply_text}</div>}
                         <div className="msg-bubble"
-                          onContextMenu={e=>{e.preventDefault();setMenuPos({x:e.clientX,y:e.clientY});setMsgMenu({msg});}}
-                          onTouchStart={e=>{swipeStartX.current=e.touches[0].clientX;const t=e.touches[0];longPressTimer.current=setTimeout(()=>{setMenuPos({x:t.clientX,y:t.clientY});setMsgMenu({msg});},500);}}
+                          onContextMenu={e=>{e.preventDefault();const r=e.currentTarget.getBoundingClientRect();setMenuPos({top:r.bottom,left:r.left,width:r.width,isMe});setMsgMenu({msg});}}
+                          onTouchStart={e=>{swipeStartX.current=e.touches[0].clientX;const el=e.currentTarget;longPressTimer.current=setTimeout(()=>{const r=el.getBoundingClientRect();setMenuPos({top:r.bottom,left:r.left,width:r.width,isMe});setMsgMenu({msg});},500);}}
                           onTouchMove={e=>{clearTimeout(longPressTimer.current);handleTouchMove(e);}}
                           onTouchEnd={()=>{clearTimeout(longPressTimer.current);handleTouchEnd(msg);}}
-                          style={{ background:isMe?"linear-gradient(135deg,#9333EA,#7C3AED)":"#1C1C28",color:"#fff",borderRadius:isMe?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px"):(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),padding:msg.type==="image"?4:"11px 15px",fontSize:15,lineHeight:1.55,cursor:"pointer",wordBreak:"break-word",whiteSpace:"pre-wrap" }}>
+                          style={{ background:msgMenu?.msg?.id===msg.id?(isMe?"linear-gradient(135deg,#7C3AED,#5B21B6)":"#2A2A3A"):isMe?"linear-gradient(135deg,#9333EA,#7C3AED)":"#1C1C28",color:"#fff",borderRadius:isMe?(isFirstInGroup?"20px 20px 6px 20px":"20px 6px 6px 20px"):(isFirstInGroup?"20px 20px 20px 6px":"6px 20px 20px 6px"),padding:msg.type==="image"?4:"11px 15px",fontSize:15,lineHeight:1.55,cursor:"pointer",wordBreak:"break-word",whiteSpace:"pre-wrap",transition:"background .15s",transform:msgMenu?.msg?.id===msg.id?"scale(1.02)":"scale(1)" }}>
                           {msg.type==="image"&&<img src={msg.data_url} alt="" onClick={()=>setLightbox(msg.data_url)} style={{ maxWidth:220,maxHeight:240,borderRadius:14,display:"block",cursor:"pointer" }} />}
                           {msg.type==="file"&&(
                             msg.is_voice ? (
@@ -940,29 +941,45 @@ export default function App() {
                 <div ref={chatEndRef} />
               </div>
 
-              {/* Context menu */}
-              {msgMenu&&(
-                <div onClick={()=>setMsgMenu(null)} style={{ position:"fixed",inset:0,zIndex:100 }}>
-                  <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",top:Math.min(menuPos.y+8, window.innerHeight-380),left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:"min(280px, 90vw)",boxShadow:"0 8px 40px #00000099",border:"1px solid #2A2A38",zIndex:101,maxHeight:"80vh",overflowY:"auto" }}>
-                    <div style={{ display:"flex",justifyContent:"space-around",padding:"12px 16px",borderBottom:"1px solid #2A2A38" }}>
-                      {REACT_EMOJIS.map(e=><span key={e} onClick={()=>toggleReaction(msgMenu.msg,e)} style={{ fontSize:24,cursor:"pointer" }}>{e}</span>)}
+              {/* Context menu — anchored below the pressed message */}
+              {msgMenu&&(()=>{
+                const menuW = Math.min(260, window.innerWidth*0.88);
+                const spaceBelow = window.innerHeight - menuPos.top - 8;
+                const menuH = Math.min(380, spaceBelow > 200 ? spaceBelow - 16 : window.innerHeight * 0.55);
+                // Place below message if enough space, otherwise above
+                const topPos = spaceBelow > 200 ? menuPos.top + 8 : menuPos.top - menuH - 60;
+                // Align to message side: right-align for my messages, left-align for theirs
+                const leftPos = menuPos.isMe
+                  ? Math.min(window.innerWidth - menuW - 12, menuPos.left + menuPos.width - menuW)
+                  : Math.max(12, menuPos.left);
+                return (
+                  <div onClick={()=>setMsgMenu(null)} style={{ position:"fixed",inset:0,zIndex:100,background:"rgba(0,0,0,0.45)" }}>
+                    <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",top:Math.max(8,topPos),left:leftPos,background:"#1A1A26",borderRadius:18,overflow:"hidden",width:menuW,boxShadow:"0 8px 40px #000000BB",border:"1px solid #2A2A38",zIndex:101,maxHeight:menuH,overflowY:"auto",animation:"popIn .18s ease" }}>
+                      {/* Reaction bar */}
+                      <div style={{ display:"flex",justifyContent:"space-around",padding:"14px 12px",borderBottom:"1px solid #2A2A38",background:"#141420" }}>
+                        {REACT_EMOJIS.map(e=><span key={e} onClick={()=>toggleReaction(msgMenu.msg,e)} style={{ fontSize:26,cursor:"pointer",padding:"0 2px" }}>{e}</span>)}
+                      </div>
+                      {/* Timestamp */}
+                      <div style={{ padding:"8px 16px 4px",fontSize:11,color:"#4B5563",fontWeight:600,borderBottom:"1px solid #1E1E2A" }}>
+                        {new Date(msgMenu.msg.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
+                      </div>
+                      {[
+                        {label:"Reply",Icon:IcReply,action:()=>{setReplyTo(msgMenu.msg);setMsgMenu(null);}},
+                        ...(msgMenu.msg.from_id===me.id&&msgMenu.msg.type==="text"?[{label:"Edit",Icon:IcEdit,action:()=>{setEditingMsg({id:msgMenu.msg.id,text:msgMenu.msg.text});setMsgMenu(null);}}]:[]),
+                        {label:"Copy",Icon:IcCopy,action:()=>{navigator.clipboard?.writeText(msgMenu.msg.text||"");notify("Copied!");setMsgMenu(null);}},
+                        {label:"Forward",Icon:IcForward,action:()=>forwardMessage(msgMenu.msg)},
+                        {label:pinnedMsgs.find(m=>m.id===msgMenu.msg.id)?"Unpin":"Pin",Icon:IcPushPin,action:()=>pinMessage(msgMenu.msg)},
+                        ...(msgMenu.msg.type==="image"?[{label:"View photo",Icon:IcImage,action:()=>{setLightbox(msgMenu.msg.data_url);setMsgMenu(null);}}]:[]),
+                        ...(msgMenu.msg.from_id===me.id?[{label:"Unsend",Icon:IcUnsend,color:"#EF4444",action:()=>unsendMessage(msgMenu.msg.id)}]:[{label:"Report",Icon:IcFlag,color:"#EF4444",action:()=>{notify("Reported.","#F97316");setMsgMenu(null);}}]),
+                      ].map((opt,i,arr)=>(
+                        <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"13px 18px",background:"none",color:opt.color||"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #1E1E2A":"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",border:"none" }}>
+                          <opt.Icon size={20} color={opt.color||"#E2E8F0"}/>{opt.label}
+                        </button>
+                      ))}
                     </div>
-                    {[
-                      {label:"Reply",Icon:IcReply,action:()=>{setReplyTo(msgMenu.msg);setMsgMenu(null);}},
-                      ...(msgMenu.msg.from_id===me.id&&msgMenu.msg.type==="text"?[{label:"Edit",Icon:IcEdit,action:()=>{setEditingMsg({id:msgMenu.msg.id,text:msgMenu.msg.text});setMsgMenu(null);}}]:[]),
-                      {label:"Copy",Icon:IcCopy,action:()=>{navigator.clipboard?.writeText(msgMenu.msg.text||"");notify("Copied!");setMsgMenu(null);}},
-                      {label:"Forward",Icon:IcForward,action:()=>forwardMessage(msgMenu.msg)},
-                      {label:pinnedMsgs.find(m=>m.id===msgMenu.msg.id)?"Unpin":"Pin",Icon:IcPushPin,action:()=>pinMessage(msgMenu.msg)},
-                      ...(msgMenu.msg.type==="image"?[{label:"View photo",Icon:IcImage,action:()=>{setLightbox(msgMenu.msg.data_url);setMsgMenu(null);}}]:[]),
-                      ...(msgMenu.msg.from_id===me.id?[{label:"Unsend",Icon:IcUnsend,color:"#EF4444",action:()=>unsendMessage(msgMenu.msg.id)}]:[{label:"Report",Icon:IcFlag,color:"#EF4444",action:()=>{notify("Reported.","#F97316");setMsgMenu(null);}}]),
-                    ].map((opt,i,arr)=>(
-                      <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"13px 20px",background:"none",color:opt.color||"#E2E8F0",fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #2A2A38":"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",border:"none" }}>
-                        <opt.Icon size={20} color={opt.color||"#E2E8F0"}/>{opt.label}
-                      </button>
-                    ))}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {showEmoji&&(<div style={{ background:"#141420",borderTop:"1px solid #1E1E2A",padding:"12px 16px",display:"flex",flexWrap:"wrap",gap:10,flexShrink:0 }}>{EMOJIS.map(e=><span key={e} onClick={()=>setInput(p=>p+e)} style={{ fontSize:22,cursor:"pointer" }}>{e}</span>)}</div>)}
 
@@ -1096,29 +1113,36 @@ export default function App() {
                   {friends.length===0 && <div style={{ textAlign:"center",color:"#4B5563",padding:"40px 0",fontSize:14 }}><div style={{ fontSize:42,marginBottom:12 }}>💬</div>Add friends to start chatting!</div>}
                   {sortedFriends.length===0 && friends.length>0 && chatListSearch && <div style={{ textAlign:"center",color:"#4B5563",padding:"30px 0",fontSize:14 }}>No chats match "{chatListSearch}"</div>}
 
-                  {chatRowMenu && (
-                    <div onClick={()=>setChatRowMenu(null)} style={{ position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.5)" }}>
-                      <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",background:"#1A1A26",borderRadius:20,overflow:"hidden",width:"min(280px,90vw)",boxShadow:"0 8px 40px #00000099",border:"1px solid #2A2A38",animation:"popIn .2s ease",zIndex:201 }}>
-                        <div style={{ display:"flex",alignItems:"center",gap:12,padding:"14px 18px",borderBottom:"1px solid #2A2A38" }}>
-                          <Avatar user={chatRowMenu.user} size={38} showStatus />
-                          <div>
-                            <div style={{ fontWeight:700,fontSize:14 }}>{chatRowMenu.user.name}</div>
-                            <div style={{ fontSize:12,color:"#6B7280" }}>@{chatRowMenu.user.username}</div>
+                  {chatRowMenu && (()=>{
+                    const menuW = Math.min(270, window.innerWidth - 24);
+                    const spaceBelow = window.innerHeight - chatRowMenuPos.top - 8;
+                    const menuH = 240;
+                    const topPos = spaceBelow > menuH + 16 ? chatRowMenuPos.top + 6 : chatRowMenuPos.top - menuH - 6;
+                    const leftPos = Math.max(12, Math.min(chatRowMenuPos.left, window.innerWidth - menuW - 12));
+                    return (
+                      <div onClick={()=>setChatRowMenu(null)} style={{ position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.45)" }}>
+                        <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",top:Math.max(8,topPos),left:leftPos,background:"#1A1A26",borderRadius:18,overflow:"hidden",width:menuW,boxShadow:"0 8px 40px #000000BB",border:"1px solid #2A2A38",animation:"popIn .18s ease",zIndex:201 }}>
+                          <div style={{ display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderBottom:"1px solid #2A2A38",background:"#141420" }}>
+                            <Avatar user={chatRowMenu.user} size={36} showStatus />
+                            <div>
+                              <div style={{ fontWeight:700,fontSize:14 }}>{chatRowMenu.user.name}</div>
+                              <div style={{ fontSize:12,color:"#6B7280" }}>@{chatRowMenu.user.username}</div>
+                            </div>
                           </div>
+                          {[
+                            { label: pinnedChats.includes(chatRowMenu.user.id) ? "Unpin chat" : "Pin chat", Icon: IcPushPin, color:"#E2E8F0", action:()=>{togglePinChat(chatRowMenu.user.id);setChatRowMenu(null);} },
+                            { label: "Mark as read", Icon: IcDoubleCheck, color:"#E2E8F0", action:()=>handleMarkRead(chatRowMenu.user.id) },
+                            { label: "View profile", Icon: IcUser, color:"#E2E8F0", action:()=>{setFullProfileUser(chatRowMenu.user);setChatRowMenu(null);} },
+                            { label: "Delete chat", Icon: IcUnsend, color:"#EF4444", action:()=>handleDeleteChat(chatRowMenu.user.id) },
+                          ].map((opt,i,arr)=>(
+                            <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"13px 16px",background:"none",color:opt.color,fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #1E1E2A":"none",display:"flex",alignItems:"center",gap:12,cursor:"pointer",border:"none" }}>
+                              <opt.Icon size={20} color={opt.color}/>{opt.label}
+                            </button>
+                          ))}
                         </div>
-                        {[
-                          { label: pinnedChats.includes(chatRowMenu.user.id) ? "Unpin chat" : "Pin chat", Icon: IcPushPin, color:"#E2E8F0", action:()=>{togglePinChat(chatRowMenu.user.id);setChatRowMenu(null);} },
-                          { label: "Mark as read", Icon: IcDoubleCheck, color:"#E2E8F0", action:()=>handleMarkRead(chatRowMenu.user.id) },
-                          { label: "View profile", Icon: IcUser, color:"#E2E8F0", action:()=>{setFullProfileUser(chatRowMenu.user);setChatRowMenu(null);} },
-                          { label: "Delete chat", Icon: IcUnsend, color:"#EF4444", action:()=>handleDeleteChat(chatRowMenu.user.id) },
-                        ].map((opt,i,arr)=>(
-                          <button key={opt.label} onClick={opt.action} style={{ width:"100%",padding:"14px 18px",background:"none",color:opt.color,fontSize:14,fontWeight:600,textAlign:"left",borderBottom:i<arr.length-1?"1px solid #2A2A38":"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",border:"none" }}>
-                            <opt.Icon size={20} color={opt.color}/>{opt.label}
-                          </button>
-                        ))}
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {sortedFriends.map(user=>{
                     const lm=lastMsgs[user.id];
@@ -1133,7 +1157,8 @@ export default function App() {
                         onClick={()=>{setActiveChat(user);setChatView("messages");setMarkedRead(p=>p.filter(id=>id!==user.id));}}
                         onTouchStart={(e)=>{
                           pullStartY.current = e.touches[0].clientY;
-                          chatRowLongPress.current=setTimeout(()=>{setChatRowMenu({user});},550);
+                          const el=e.currentTarget;
+                          chatRowLongPress.current=setTimeout(()=>{const r=el.getBoundingClientRect();setChatRowMenuPos({top:r.bottom,left:r.left,width:r.width});setChatRowMenu({user});},550);
                         }}
                         onTouchEnd={(e)=>{
                           clearTimeout(chatRowLongPress.current);
@@ -1141,8 +1166,8 @@ export default function App() {
                           if (dy > 80 && !chatRowMenu) { setIsPulling(true); loadSocial().then(()=>setTimeout(()=>setIsPulling(false),600)); }
                         }}
                         onTouchMove={()=>clearTimeout(chatRowLongPress.current)}
-                        onContextMenu={e=>{e.preventDefault();setChatRowMenu({user});}}
-                        style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:12,position:"relative" }}>
+                        onContextMenu={e=>{e.preventDefault();const r=e.currentTarget.getBoundingClientRect();setChatRowMenuPos({top:r.bottom,left:r.left,width:r.width});setChatRowMenu({user});}}
+                        style={{ display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #151520",cursor:"pointer",borderRadius:12,position:"relative",background:chatRowMenu?.user?.id===user.id?"#1a1a2e":"transparent",transition:"background .15s" }}>
                         <div onClick={e=>{e.stopPropagation();setAvatarOverlay(user);}} style={{ flexShrink:0,cursor:"pointer" }}>
                           <Avatar user={{...user,online}} size={50} showStatus />
                         </div>

@@ -285,17 +285,26 @@ export default function App() {
     load(); const id=setInterval(load,5000); return ()=>clearInterval(id);
   }, [me,friends]);
 
+  // Unpack JSON-encoded text back into fields for voice/image/file messages
+  const parseMsg = useCallback((m) => {
+    if (!m) return m;
+    if (m.type==="voice"||m.type==="image"||m.type==="file") {
+      try { const p=JSON.parse(m.text); return {...m,...p,_raw:m.text}; } catch { return m; }
+    }
+    return m;
+  }, []);
+
   const loadMessages = useCallback(async () => {
     if (!me||!activeChat) return;
     const {data} = await supabase.from("messages").select("*")
       .or(`and(from_id.eq.${me.id},to_id.eq.${activeChat.id}),and(from_id.eq.${activeChat.id},to_id.eq.${me.id})`)
       .order("created_at",{ascending:true});
-    const filtered = (data||[]).filter(m => !unsentIds.current.has(m.id));
+    const filtered = (data||[]).filter(m => !unsentIds.current.has(m.id)).map(parseMsg);
     setMessages(filtered);
     setMsgsLoaded(true);
     const unseen = filtered.filter(m=>m.to_id===me.id&&!m.seen);
     if (unseen.length) await supabase.from("messages").update({seen:true}).in("id",unseen.map(m=>m.id));
-  }, [me,activeChat]);
+  }, [me,activeChat,parseMsg]);
 
   useEffect(() => {
     if (!me||!activeChat) return;
@@ -312,7 +321,7 @@ export default function App() {
         if (!isOurs) return;
         setMessages(prev=>{
           if (prev.find(m=>m.id===p.new.id)) return prev;
-          return [...prev, p.new];
+          return [...prev, parseMsg(p.new)];
         });
       })
       .on("postgres_changes",{event:"UPDATE",schema:"public",table:"messages"},(p)=>{
@@ -363,16 +372,28 @@ export default function App() {
 
   const sendMessage = async (text, type="text", extra={}) => {
     if ((!text?.trim()&&type==="text")||!activeChat) return;
-    const msg = { from_id:me.id, to_id:activeChat.id, text:type==="text"?text.trim():text, type, seen:false, reactions:[], ...extra };
+    // For voice/image/file: pack all extra data into text as JSON so no extra columns needed
+    let storedText = type==="text" ? text.trim() : text;
+    if (type==="voice"||type==="image"||type==="file") {
+      storedText = JSON.stringify({ text, ...extra });
+    }
+    const msg = { from_id:me.id, to_id:activeChat.id, text:storedText, type, seen:false, reactions:[] };
     if (replyTo) { msg.reply_to_id=replyTo.id; msg.reply_text=replyTo.type==="text"?replyTo.text:"Photo"; msg.reply_from=replyTo.from_id===me.id?"You":activeChat.name; }
     const {data,error} = await supabase.from("messages").insert(msg).select().single();
-    if (!error&&data) setMessages(p=>[...p,data]);
+    if (error) { console.error("sendMessage error:", error); notify("Failed to send.", "#EF4444"); return; }
+    if (data) {
+      // Parse stored JSON back so UI renders correctly immediately
+      const parsed = parseMsg(data);
+      setMessages(p=>[...p,parsed]);
+    }
     setInput("");
-    resetTextarea(); // ── FIX: shrink textarea back to 1 row
+    resetTextarea();
     setShowEmoji(false);
     setReplyTo(null);
     await supabase.from("typing").upsert({from_id:me.id,to_id:activeChat.id,updated_at:new Date(0).toISOString()},{onConflict:"from_id,to_id"});
   };
+
+
 
   const sendFile = async (e) => {
     const file=e.target.files[0]; if (!file) return;
@@ -661,8 +682,9 @@ export default function App() {
           // Fallback: send as base64 if storage fails (small recordings only)
           if (blob.size < 500000) {
             const reader = new FileReader();
+            const dur2 = recordSeconds;
             reader.onload = async ev => {
-              await sendMessage("🎤 Voice note", "voice", { data_url: ev.target.result, file_size: (blob.size/1024).toFixed(1)+" KB", duration: recordSeconds });
+              await sendMessage("🎤 Voice note", "voice", { data_url: ev.target.result, file_size: (blob.size/1024).toFixed(1)+" KB", duration: dur2 });
             };
             reader.readAsDataURL(blob);
           } else {
@@ -671,7 +693,8 @@ export default function App() {
           setRecordSeconds(0); return;
         }
         const { data: urlData } = supabase.storage.from("voice-notes").getPublicUrl(path);
-        await sendMessage("🎤 Voice note", "voice", { data_url: urlData.publicUrl, file_size: (blob.size/1024).toFixed(1)+" KB", duration: recordSeconds });
+        const dur = recordSeconds;
+        await sendMessage("🎤 Voice note", "voice", { data_url: urlData.publicUrl, file_size: (blob.size/1024).toFixed(1)+" KB", duration: dur });
         setRecordSeconds(0);
       };
       mr.start(200); // collect data every 200ms
@@ -1375,7 +1398,13 @@ export default function App() {
                           </div>
                           <div style={{ fontSize:13,color:unread?"#A78BFA":"#6B7280",marginTop:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontWeight:unread?600:400 }}>
                             {mutedUsers.includes(user.id)&&<IcBellOff size={11} color="#4B5563"/>}
-                            {" "}{lm?(lm.type==="image"?"📷 Photo":lm.type==="file"?"📎 File":(lm.from_id===me.id?`You: ${lm.text}`:lm.text)):"Say hello!"}
+                            {" "}{lm?(()=>{
+                              const prefix = lm.from_id===me.id?"You: ":"";
+                              if(lm.type==="image") return "📷 Photo";
+                              if(lm.type==="voice") return "🎤 Voice note";
+                              if(lm.type==="file") return "📎 File";
+                              return prefix+lm.text;
+                            })():"Say hello!"}
                           </div>
                         </div>
                         {unread && (

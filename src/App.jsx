@@ -264,8 +264,19 @@ export default function App() {
     const load = async () => {
       const lm={};
       for (const f of friends) {
-        const {data} = await supabase.from("messages").select("*").or(`and(from_id.eq.${me.id},to_id.eq.${f.id}),and(from_id.eq.${f.id},to_id.eq.${me.id})`).order("created_at",{ascending:false}).limit(1);
-        lm[f.id]=data?.[0]||null;
+        // Fetch last message + unread count together
+        const {data:msgs} = await supabase.from("messages").select("*")
+          .or(`and(from_id.eq.${me.id},to_id.eq.${f.id}),and(from_id.eq.${f.id},to_id.eq.${me.id})`)
+          .order("created_at",{ascending:false}).limit(20);
+        if (msgs?.length) {
+          // Filter out any locally unsent messages
+          const visible = msgs.filter(m=>!unsentIds.current.has(m.id));
+          const last = visible[0]||null;
+          const unreadCount = visible.filter(m=>m.from_id===f.id&&!m.seen).length;
+          lm[f.id] = last ? {...last, unreadCount} : null;
+        } else {
+          lm[f.id] = null;
+        }
       }
       setLastMsgs(lm);
     };
@@ -310,6 +321,15 @@ export default function App() {
         if (p.old?.id) {
           unsentIds.current.add(p.old.id);
           setMessages(prev=>prev.filter(m=>m.id!==p.old.id));
+          // Also clear from lastMsgs preview so recipient doesn't see deleted msg
+          setLastMsgs(prev=>{
+            const updated={...prev};
+            const peerId=p.old.from_id===me.id?p.old.to_id:p.old.from_id;
+            if (updated[peerId]?.id===p.old.id) {
+              updated[peerId]=null; // will refresh on next poll
+            }
+            return updated;
+          });
         }
       })
       .subscribe();
@@ -1101,7 +1121,8 @@ export default function App() {
                     const lm=lastMsgs[user.id];
                     const online=isOnline(user);
                     const isMarkedRead = markedRead.includes(user.id);
-                    const unread = lm && !lm.seen && lm.from_id!==me.id && !isMarkedRead;
+                    const unreadCount = isMarkedRead ? 0 : (lm?.unreadCount||0);
+                    const unread = unreadCount > 0;
                     const time=lm?new Date(lm.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"";
                     const isPinned=pinnedChats.includes(user.id);
                     return (
@@ -1136,8 +1157,10 @@ export default function App() {
                           </div>
                         </div>
                         {unread && (
-                          <div style={{ minWidth:20,height:20,borderRadius:10,background:"#A78BFA",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 5px" }}>
-                            <span style={{ fontSize:11,fontWeight:800,color:"#fff" }}>●</span>
+                          <div style={{ flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3 }}>
+                            <div style={{ minWidth:22,height:22,borderRadius:11,background:"linear-gradient(135deg,#A78BFA,#6366F1)",display:"flex",alignItems:"center",justifyContent:"center",padding:"0 7px" }}>
+                              <span style={{ fontSize:11,fontWeight:800,color:"#fff" }}>{unreadCount>9?"9+":unreadCount}</span>
+                            </div>
                           </div>
                         )}
                       </div>
